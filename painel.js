@@ -1,4 +1,4 @@
-// painel.js - Sistema Unificado ICLUB - VERSÃO COMPLETA
+// painel.js - Sistema Unificado ICLUB - VERSÃO COMPLETA COM MELHORIAS
 
 // Variáveis globais
 let dadosAparelhos = null;
@@ -2121,10 +2121,1035 @@ function atualizarTop5Produtos(vendasOriginais) {
 }
 
 // ============================================
-// SEÇÃO DE AUTOMAÇÃO - NOVA FUNCIONALIDADE
+// MELHORIAS - SISTEMA DE BACKUP E VALIDAÇÃO
 // ============================================
 
-// Adicionar após a função configurarBotaoProcessarTudo()
+// Adicionar após a função configurarAutomacao()
+function adicionarSecaoBackupEAlertas() {
+    const uploadContent = document.querySelector('#secao-configuracao .upload-content');
+    
+    if (uploadContent) {
+        const melhoriasSectionHtml = `
+            <!-- SEÇÃO DE BACKUP -->
+            <div class="upload-section">
+                <div class="upload-header">
+                    <h3>💾 Sistema de Backup</h3>
+                </div>
+                <div class="upload-content">
+                    <div class="config-item">
+                        <div class="config-title">🔒 BACKUP AUTOMÁTICO</div>
+                        
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <div id="statusBackup" class="connection-status" style="display: block;">
+                                🔄 Verificando status dos backups...
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                            <button id="btnCriarBackup" class="upload-btn">
+                                💾 CRIAR BACKUP MANUAL
+                            </button>
+                            <button id="btnRestaurarBackup" class="upload-btn">
+                                🔄 RESTAURAR BACKUP
+                            </button>
+                        </div>
+                        
+                        <div class="admin-metas-gerais-stats" style="margin-bottom: 15px;">
+                            <div class="admin-metas-gerais-stat">
+                                <div class="admin-metas-gerais-stat-label">Total de Backups</div>
+                                <div id="totalBackups" class="admin-metas-gerais-stat-valor">-</div>
+                            </div>
+                            <div class="admin-metas-gerais-stat">
+                                <div class="admin-metas-gerais-stat-label">Último Backup</div>
+                                <div id="ultimoBackup" class="admin-metas-gerais-stat-valor">-</div>
+                            </div>
+                            <div class="admin-metas-gerais-stat">
+                                <div class="admin-metas-gerais-stat-label">Espaço Usado</div>
+                                <div id="espacoBackups" class="admin-metas-gerais-stat-valor">-</div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                            <h4 style="color: #28a745; margin-bottom: 10px;">💾 Backup Automático:</h4>
+                            <ul style="font-size: 14px; color: #666; padding-left: 20px;">
+                                <li>Backup criado automaticamente antes de cada processamento</li>
+                                <li>Últimos 30 backups são mantidos automaticamente</li>
+                                <li>Verificação de integridade com checksum</li>
+                                <li>Restauração rápida em caso de problemas</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEÇÃO DE ALERTAS E VALIDAÇÃO -->
+            <div class="upload-section">
+                <div class="upload-header">
+                    <h3>🚨 Alertas e Validação</h3>
+                </div>
+                <div class="upload-content">
+                    <div class="config-item">
+                        <div class="config-title">⚠️ SISTEMA DE ALERTAS</div>
+                        
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <div id="statusAlertas" class="connection-status" style="display: block;">
+                                🔄 Verificando alertas ativos...
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                            <button id="btnVerAlertas" class="upload-btn">
+                                🚨 VER ALERTAS ATIVOS
+                            </button>
+                            <button id="btnHistoricoValidacao" class="upload-btn">
+                                📋 HISTÓRICO VALIDAÇÃO
+                            </button>
+                        </div>
+                        
+                        <div id="alertasAtivos" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px;">
+                            <!-- Alertas serão carregados aqui -->
+                        </div>
+                        
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                            <h4 style="color: #dc3545; margin-bottom: 10px;">🚨 Sistema de Alertas:</h4>
+                            <ul style="font-size: 14px; color: #666; padding-left: 20px;">
+                                <li><strong>Metas em Risco:</strong> Quando vendas estão abaixo do esperado</li>
+                                <li><strong>Dados Anômalos:</strong> Preços ou quantidades suspeitas</li>
+                                <li><strong>Vendedores Inativos:</strong> Sem vendas significativas</li>
+                                <li><strong>Problemas Técnicos:</strong> Falhas na automação</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEÇÃO DE LOGS DETALHADOS -->
+            <div class="upload-section">
+                <div class="upload-header">
+                    <h3>📊 Logs e Histórico</h3>
+                </div>
+                <div class="upload-content">
+                    <div class="config-item">
+                        <div class="config-title">📋 HISTÓRICO DETALHADO</div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                            <button id="btnLogsDetalhados" class="upload-btn">
+                                📋 LOGS DETALHADOS
+                            </button>
+                            <button id="btnHistoricoExecucoes" class="upload-btn">
+                                ⏰ HISTÓRICO EXECUÇÕES
+                            </button>
+                        </div>
+                        
+                        <div class="admin-metas-gerais-stats" style="margin-bottom: 15px;">
+                            <div class="admin-metas-gerais-stat">
+                                <div class="admin-metas-gerais-stat-label">Execuções (7 dias)</div>
+                                <div id="execucoes7dias" class="admin-metas-gerais-stat-valor">-</div>
+                            </div>
+                            <div class="admin-metas-gerais-stat">
+                                <div class="admin-metas-gerais-stat-label">Taxa de Sucesso</div>
+                                <div id="taxaSucesso7dias" class="admin-metas-gerais-stat-valor highlight">-</div>
+                            </div>
+                            <div class="admin-metas-gerais-stat">
+                                <div class="admin-metas-gerais-stat-label">Última Falha</div>
+                                <div id="ultimaFalha" class="admin-metas-gerais-stat-valor urgent">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Inserir após a seção de automação existente
+        const automacaoSection = document.querySelector('#statusAutomacao').closest('.upload-section');
+        automacaoSection.insertAdjacentHTML('afterend', melhoriasSectionHtml);
+    }
+}
+
+// ============================================
+// MELHORAR SEÇÃO DE AUTOMAÇÃO EXISTENTE
+// ============================================
+
+// Modificar a função adicionarBotaoAutomacao() existente para incluir edição de horário
+function melhorarSecaoAutomacao() {
+    const automacaoContent = document.querySelector('#statusAutomacao').closest('.upload-content');
+    
+    if (automacaoContent) {
+        // Encontrar a div dos botões e adicionar o botão de editar horário
+        const botaoTeste = document.getElementById('btnTesteAutomacao');
+        const botaoHistorico = document.getElementById('btnHistoricoAutomacao');
+        
+        if (botaoTeste && botaoHistorico) {
+            // Criar nova estrutura de botões
+            const containerBotoes = botaoTeste.parentElement;
+            containerBotoes.style.gridTemplateColumns = '1fr 1fr 1fr';
+            
+            // Adicionar botão de editar horário
+            const btnEditarHorario = document.createElement('button');
+            btnEditarHorario.id = 'btnEditarHorario';
+            btnEditarHorario.className = 'upload-btn';
+            btnEditarHorario.innerHTML = '⏰ EDITAR HORÁRIO';
+            containerBotoes.appendChild(btnEditarHorario);
+            
+            // Configurar evento do botão
+            btnEditarHorario.addEventListener('click', mostrarModalEditarHorario);
+        }
+        
+        // Adicionar seção de status mais detalhado
+        const ultimaExecucaoDiv = document.getElementById('ultimaExecucao');
+        if (ultimaExecucaoDiv) {
+            ultimaExecucaoDiv.insertAdjacentHTML('afterend', `
+                <div id="detalhesExecucao" style="margin-top: 15px; padding: 15px; background: #e9ecef; border-radius: 8px; display: none;">
+                    <h4 style="color: #28a745; margin-bottom: 10px;">📊 Detalhes da Última Execução:</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px;">
+                        <div><strong>Duração:</strong> <span id="duracaoUltimaExecucao">-</span></div>
+                        <div><strong>Registros:</strong> <span id="registrosUltimaExecucao">-</span></div>
+                        <div><strong>Aparelhos:</strong> <span id="aparelhosUltimaExecucao">-</span></div>
+                        <div><strong>Acessórios:</strong> <span id="acessoriosUltimaExecucao">-</span></div>
+                        <div><strong>Alertas:</strong> <span id="alertasUltimaExecucao">-</span></div>
+                        <div><strong>Status:</strong> <span id="statusUltimaExecucao">-</span></div>
+                    </div>
+                </div>
+            `);
+        }
+    }
+}
+
+// ============================================
+// FUNÇÕES DE BACKUP
+// ============================================
+
+async function carregarStatusBackup() {
+    try {
+        if (!window.db) return;
+        
+        // Buscar backups existentes
+        const snapshot = await window.db.collection('backups')
+            .orderBy('timestamp', 'desc')
+            .limit(30)
+            .get();
+        
+        const totalBackups = snapshot.size;
+        let ultimoBackup = null;
+        let espacoTotal = 0;
+        
+        snapshot.forEach(doc => {
+            const backup = doc.data();
+            if (!ultimoBackup) ultimoBackup = backup;
+            
+            // Calcular espaço aproximado (tamanho do JSON em chars)
+            espacoTotal += JSON.stringify(backup.dados).length;
+        });
+        
+        // Atualizar interface
+        document.getElementById('totalBackups').textContent = totalBackups;
+        
+        if (ultimoBackup) {
+            const tempoDecorrido = Math.round((Date.now() - new Date(ultimoBackup.timestamp).getTime()) / (1000 * 60));
+            document.getElementById('ultimoBackup').textContent = `${tempoDecorrido}min atrás`;
+        } else {
+            document.getElementById('ultimoBackup').textContent = 'Nenhum';
+        }
+        
+        // Converter espaço para MB aproximadamente
+        const espacoMB = (espacoTotal / (1024 * 1024)).toFixed(2);
+        document.getElementById('espacoBackups').textContent = `${espacoMB} MB`;
+        
+        // Status geral
+        const statusBackup = document.getElementById('statusBackup');
+        if (totalBackups >= 5) {
+            statusBackup.innerHTML = '✅ Sistema de backup funcionando';
+            statusBackup.style.background = '#d4edda';
+            statusBackup.style.color = '#155724';
+        } else {
+            statusBackup.innerHTML = '⚠️ Poucos backups disponíveis';
+            statusBackup.style.background = '#fff3cd';
+            statusBackup.style.color = '#856404';
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar status do backup:', error);
+        document.getElementById('statusBackup').innerHTML = '❌ Erro ao verificar backups';
+    }
+}
+
+async function criarBackupManual() {
+    const btn = document.getElementById('btnCriarBackup');
+    
+    try {
+        btn.disabled = true;
+        btn.innerHTML = '🔄 Criando backup...';
+        
+        if (!window.db) {
+            throw new Error('Firebase não disponível');
+        }
+        
+        // Buscar dados atuais
+        const doc = await window.db.collection('vendas').doc('dados_atuais').get();
+        
+        if (!doc.exists) {
+            throw new Error('Nenhum dado encontrado para fazer backup');
+        }
+        
+        const dadosAtuais = doc.data();
+        
+        // Criar backup
+        const backup = {
+            dados: dadosAtuais.dados,
+            vendasOriginais: dadosAtuais.vendasOriginais,
+            metadata: {
+                periodo: dadosAtuais.periodoVendas,
+                ultimaAtualizacao: dadosAtuais.ultimaAtualizacao,
+                tipoBackup: 'manual',
+                criadoPor: 'usuario'
+            },
+            timestamp: new Date().toISOString(),
+            versao: '1.0',
+            checksum: gerarChecksum(dadosAtuais.dados)
+        };
+        
+        // Salvar backup
+        const backupId = `backup_manual_${Date.now()}`;
+        await window.db.collection('backups').doc(backupId).set(backup);
+        
+        // Limpar backups antigos
+        await limparBackupsAntigos();
+        
+        btn.innerHTML = '✅ Backup criado!';
+        mostrarSucesso(`✅ Backup manual criado com sucesso: ${backupId}`);
+        
+        // Atualizar status
+        setTimeout(() => {
+            carregarStatusBackup();
+            btn.innerHTML = '💾 CRIAR BACKUP MANUAL';
+            btn.disabled = false;
+        }, 2000);
+        
+    } catch (error) {
+        console.error('❌ Erro ao criar backup:', error);
+        mostrarErro(`❌ Erro ao criar backup: ${error.message}`);
+        btn.innerHTML = '💾 CRIAR BACKUP MANUAL';
+        btn.disabled = false;
+    }
+}
+
+function gerarChecksum(dados) {
+    const str = JSON.stringify(dados);
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    return hash.toString();
+}
+
+async function limparBackupsAntigos() {
+    try {
+        const snapshot = await window.db.collection('backups')
+            .orderBy('timestamp', 'desc')
+            .offset(30)
+            .get();
+        
+        if (!snapshot.empty) {
+            const batch = window.db.batch();
+            snapshot.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+            await batch.commit();
+            console.log(`🗑️ Removidos ${snapshot.size} backups antigos`);
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao limpar backups:', error);
+    }
+}
+
+async function mostrarListaBackups() {
+    try {
+        if (!window.db) {
+            mostrarErro('Firebase não disponível');
+            return;
+        }
+        
+        const snapshot = await window.db.collection('backups')
+            .orderBy('timestamp', 'desc')
+            .limit(20)
+            .get();
+        
+        let backupsHtml = `
+            <h3>🔄 Restaurar Backup</h3>
+            <div style="max-height: 400px; overflow-y: auto;">
+        `;
+        
+        if (snapshot.empty) {
+            backupsHtml += '<p>Nenhum backup encontrado.</p>';
+        } else {
+            snapshot.forEach(doc => {
+                const backup = doc.data();
+                const data = new Date(backup.timestamp).toLocaleString('pt-BR');
+                const tipo = backup.metadata?.tipoBackup || 'automático';
+                
+                backupsHtml += `
+                    <div style="background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <div style="display: flex; justify-content: between; align-items: center;">
+                            <div>
+                                <strong>📅 ${data}</strong>
+                                <br><small>Tipo: ${tipo} | ID: ${doc.id}</small>
+                                ${backup.metadata?.periodo ? `<br><small>Período: ${backup.metadata.periodo.inicio} - ${backup.metadata.periodo.fim}</small>` : ''}
+                            </div>
+                            <button onclick="restaurarBackup('${doc.id}')" 
+                                    style="padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; margin-left: 10px;">
+                                Restaurar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        backupsHtml += '</div>';
+        
+        // Mostrar modal
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.7); display: flex; justify-content: center; 
+            align-items: center; z-index: 1000; overflow-y: auto; padding: 20px;
+        `;
+        
+        modal.innerHTML = `
+            <div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto;">
+                ${backupsHtml}
+                <button onclick="this.closest('.modal').remove()" 
+                        style="margin-top: 20px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    Cancelar
+                </button>
+            </div>
+        `;
+        
+        modal.className = 'modal';
+        document.body.appendChild(modal);
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar backups:', error);
+        mostrarErro('❌ Erro ao carregar lista de backups');
+    }
+}
+
+window.restaurarBackup = async function(backupId) {
+    if (!confirm('⚠️ Tem certeza que deseja restaurar este backup? Os dados atuais serão substituídos.')) {
+        return;
+    }
+    
+    try {
+        console.log(`🔄 Restaurando backup: ${backupId}`);
+        
+        // Buscar backup
+        const backupDoc = await window.db.collection('backups').doc(backupId).get();
+        
+        if (!backupDoc.exists) {
+            throw new Error('Backup não encontrado');
+        }
+        
+        const backup = backupDoc.data();
+        
+        // Verificar integridade
+        const checksumAtual = gerarChecksum(backup.dados);
+        if (checksumAtual !== backup.checksum) {
+            throw new Error('Backup corrompido - checksum não confere');
+        }
+        
+        // Restaurar dados
+        const dadosRestaurados = {
+            dados: backup.dados,
+            vendasOriginais: backup.vendasOriginais,
+            ultimaAtualizacao: new Date().toISOString(),
+            periodoVendas: backup.metadata.periodo,
+            restauradoDe: {
+                backupId: backupId,
+                timestampOriginal: backup.timestamp,
+                timestampRestauracao: new Date().toISOString()
+            }
+        };
+        
+        await window.db.collection('vendas').doc('dados_atuais').set(dadosRestaurados);
+        
+        // Fechar modal
+        document.querySelector('.modal')?.remove();
+        
+        mostrarSucesso(`✅ Backup restaurado com sucesso! Os painéis serão atualizados automaticamente.`);
+        
+        console.log('✅ Backup restaurado com sucesso');
+        
+    } catch (error) {
+        console.error('❌ Erro ao restaurar backup:', error);
+        mostrarErro(`❌ Erro ao restaurar backup: ${error.message}`);
+    }
+};
+
+// ============================================
+// SISTEMA DE ALERTAS
+// ============================================
+
+async function carregarAlertasAtivos() {
+    try {
+        if (!window.db) return;
+        
+        const doc = await window.db.collection('alertas').doc('atual').get();
+        
+        const statusAlertas = document.getElementById('statusAlertas');
+        const alertasAtivos = document.getElementById('alertasAtivos');
+        
+        if (!doc.exists) {
+            statusAlertas.innerHTML = '✅ Nenhum alerta ativo';
+            statusAlertas.style.background = '#d4edda';
+            statusAlertas.style.color = '#155724';
+            alertasAtivos.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">Nenhum alerta ativo</div>';
+            return;
+        }
+        
+        const dadosAlertas = doc.data();
+        const alertas = dadosAlertas.alertas || [];
+        const prioridades = dadosAlertas.prioridades || {};
+        
+        // Status geral
+        if (alertas.length === 0) {
+            statusAlertas.innerHTML = '✅ Nenhum alerta ativo';
+            statusAlertas.style.background = '#d4edda';
+            statusAlertas.style.color = '#155724';
+        } else if (prioridades.alta > 0) {
+            statusAlertas.innerHTML = `🚨 ${prioridades.alta} alertas de alta prioridade`;
+            statusAlertas.style.background = '#f8d7da';
+            statusAlertas.style.color = '#721c24';
+        } else {
+            statusAlertas.innerHTML = `⚠️ ${alertas.length} alertas ativos`;
+            statusAlertas.style.background = '#fff3cd';
+            statusAlertas.style.color = '#856404';
+        }
+        
+        // Lista de alertas
+        let alertasHtml = '';
+        alertas.slice(0, 5).forEach(alerta => {
+            const corPrioridade = {
+                'alta': '#dc3545',
+                'média': '#ffc107',
+                'baixa': '#28a745'
+            }[alerta.prioridade] || '#6c757d';
+            
+            const iconePrioridade = {
+                'alta': '🚨',
+                'média': '⚠️',
+                'baixa': 'ℹ️'
+            }[alerta.prioridade] || '📋';
+            
+            alertasHtml += `
+                <div style="background: #f8f9fa; padding: 10px; margin: 5px 0; border-radius: 6px; border-left: 4px solid ${corPrioridade};">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <strong>${iconePrioridade} ${alerta.mensagem}</strong>
+                            ${alerta.loja ? `<br><small>Loja: ${alerta.loja}</small>` : ''}
+                            ${alerta.vendedor ? `<br><small>Vendedor: ${alerta.vendedor}</small>` : ''}
+                            ${alerta.acao ? `<br><small style="color: #666;">💡 ${alerta.acao}</small>` : ''}
+                        </div>
+                        <span style="background: ${corPrioridade}; color: white; padding: 2px 6px; border-radius: 12px; font-size: 10px; font-weight: bold;">
+                            ${alerta.prioridade.toUpperCase()}
+                        </span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        if (alertas.length > 5) {
+            alertasHtml += `<div style="text-align: center; color: #666; padding: 10px; font-style: italic;">E mais ${alertas.length - 5} alertas...</div>`;
+        }
+        
+        alertasAtivos.innerHTML = alertasHtml || '<div style="text-align: center; color: #666; padding: 20px;">Nenhum alerta ativo</div>';
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar alertas:', error);
+        document.getElementById('statusAlertas').innerHTML = '❌ Erro ao verificar alertas';
+    }
+}
+
+async function mostrarTodosAlertas() {
+    try {
+        if (!window.db) {
+            mostrarErro('Firebase não disponível');
+            return;
+        }
+        
+        const doc = await window.db.collection('alertas').doc('atual').get();
+        
+        if (!doc.exists) {
+            mostrarSucesso('✅ Nenhum alerta ativo no momento!');
+            return;
+        }
+        
+        const dadosAlertas = doc.data();
+        const alertas = dadosAlertas.alertas || [];
+        
+        let alertasHtml = `
+            <h3>🚨 Todos os Alertas Ativos (${alertas.length})</h3>
+            <div style="max-height: 500px; overflow-y: auto;">
+        `;
+        
+        if (alertas.length === 0) {
+            alertasHtml += '<p style="text-align: center; color: #666; padding: 30px;">✅ Nenhum alerta ativo!</p>';
+        } else {
+            alertas.forEach((alerta, index) => {
+                const corPrioridade = {
+                    'alta': '#dc3545',
+                    'média': '#ffc107',
+                    'baixa': '#28a745'
+                }[alerta.prioridade] || '#6c757d';
+                
+                const iconePrioridade = {
+                    'alta': '🚨',
+                    'média': '⚠️',
+                    'baixa': 'ℹ️'
+                }[alerta.prioridade] || '📋';
+                
+                alertasHtml += `
+                    <div style="background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid ${corPrioridade};">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                            <h4 style="margin: 0; color: ${corPrioridade};">${iconePrioridade} ${alerta.tipo.replace('_', ' ').toUpperCase()}</h4>
+                            <span style="background: ${corPrioridade}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">
+                                ${alerta.prioridade.toUpperCase()}
+                            </span>
+                        </div>
+                        <p style="margin: 5px 0;"><strong>Mensagem:</strong> ${alerta.mensagem}</p>
+                        ${alerta.loja ? `<p style="margin: 5px 0;"><strong>Loja:</strong> ${alerta.loja}</p>` : ''}
+                        ${alerta.vendedor ? `<p style="margin: 5px 0;"><strong>Vendedor:</strong> ${alerta.vendedor}</p>` : ''}
+                        ${alerta.categoria ? `<p style="margin: 5px 0;"><strong>Categoria:</strong> ${alerta.categoria}</p>` : ''}
+                        ${alerta.acao ? `<p style="margin: 5px 0; padding: 8px; background: #e9ecef; border-radius: 4px;"><strong>💡 Ação Recomendada:</strong> ${alerta.acao}</p>` : ''}
+                    </div>
+                `;
+            });
+        }
+        
+        alertasHtml += `
+                </div>
+                <div style="margin-top: 15px; padding: 15px; background: #e9ecef; border-radius: 8px; font-size: 12px;">
+                    <strong>📊 Última verificação:</strong> ${new Date(dadosAlertas.timestamp).toLocaleString('pt-BR')}<br>
+                    <strong>📈 Prioridades:</strong> 
+                    🚨 Alta: ${dadosAlertas.prioridades?.alta || 0} | 
+                    ⚠️ Média: ${dadosAlertas.prioridades?.media || 0} | 
+                    ℹ️ Baixa: ${dadosAlertas.prioridades?.baixa || 0}
+                </div>
+        `;
+        
+        // Mostrar modal
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.7); display: flex; justify-content: center; 
+            align-items: center; z-index: 1000; overflow-y: auto; padding: 20px;
+        `;
+        
+        modal.innerHTML = `
+            <div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto;">
+                ${alertasHtml}
+                <button onclick="this.closest('.modal').remove()" 
+                        style="margin-top: 20px; padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    Fechar
+                </button>
+            </div>
+        `;
+        
+        modal.className = 'modal';
+        document.body.appendChild(modal);
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar alertas:', error);
+        mostrarErro('❌ Erro ao carregar alertas');
+    }
+}
+
+// ============================================
+// MODAL DE EDIÇÃO DE HORÁRIO
+// ============================================
+
+function mostrarModalEditarHorario() {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+        background: rgba(0,0,0,0.7); display: flex; justify-content: center; 
+        align-items: center; z-index: 1000;
+    `;
+    
+    // Pegar horário atual
+    const horarioAtual = document.getElementById('horarioAutomacao')?.value || '15:30';
+    
+    modal.innerHTML = `
+        <div style="background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%;">
+            <h3 style="color: #28a745; margin-bottom: 20px;">⏰ Editar Horário da Automação</h3>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #495057;">
+                    🕒 Novo Horário (24h):
+                </label>
+                <input type="time" id="novoHorarioModal" value="${horarioAtual}" 
+                       style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 16px;">
+            </div>
+            
+            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+                <h4 style="color: #856404; margin-bottom: 10px;">⚠️ Importante:</h4>
+                <ul style="font-size: 14px; color: #856404; margin: 0; padding-left: 20px;">
+                    <li>A mudança de horário requer <strong>redeploy no Netlify</strong> para ter efeito</li>
+                    <li>Use horário de Brasília (GMT-3)</li>
+                    <li>Recomendamos horários entre 15:00 e 18:00</li>
+                    <li>Evite horários de pico de uso do sistema</li>
+                </ul>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="this.closest('.modal').remove()" 
+                        style="padding: 12px 20px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button onclick="salvarNovoHorario()" 
+                        style="padding: 12px 20px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    💾 Salvar Horário
+                </button>
+            </div>
+        </div>
+    `;
+    
+    modal.className = 'modal';
+    document.body.appendChild(modal);
+    
+    // Focar no campo de horário
+    setTimeout(() => {
+        document.getElementById('novoHorarioModal').focus();
+    }, 100);
+}
+
+window.salvarNovoHorario = async function() {
+    const novoHorario = document.getElementById('novoHorarioModal').value;
+    
+    if (!novoHorario) {
+        alert('❌ Digite um horário válido!');
+        return;
+    }
+    
+    try {
+        console.log(`💾 Salvando novo horário: ${novoHorario}`);
+        
+        if (!window.db) {
+            throw new Error('Firebase não está conectado');
+        }
+        
+        const configData = {
+            horarioAutomacao: novoHorario,
+            ultimaAtualizacao: new Date().toISOString(),
+            alteradoPor: 'usuario_painel',
+            observacao: 'Horário alterado via interface do painel'
+        };
+        
+        await window.db.collection('configuracoes').doc('automacao').set(configData);
+        
+        // Atualizar campo local
+        const inputHorario = document.getElementById('horarioAutomacao');
+        const textoHorario = document.getElementById('textoHorario');
+        
+        if (inputHorario) {
+            inputHorario.value = novoHorario;
+        }
+        
+        if (textoHorario) {
+            textoHorario.textContent = `Todo dia às ${novoHorario} os relatórios são baixados automaticamente`;
+        }
+        
+        // Fechar modal
+        document.querySelector('.modal').remove();
+        
+        // Mostrar confirmação com aviso sobre redeploy
+        mostrarSucesso(`
+            ✅ Horário alterado para ${novoHorario}!<br><br>
+            <strong style="color: #856404;">⚠️ ATENÇÃO:</strong><br>
+            Para ativar a mudança, é necessário fazer <strong>redeploy no Netlify</strong>.<br>
+            O arquivo <code>netlify.toml</code> precisa ser atualizado com o novo horário.
+        `);
+        
+        console.log('✅ Novo horário salvo com sucesso!');
+        
+    } catch (error) {
+        console.error('❌ Erro ao salvar horário:', error);
+        mostrarErro(`❌ Erro ao salvar horário: ${error.message}`);
+    }
+};
+
+// ============================================
+// HISTÓRICO E LOGS DETALHADOS
+// ============================================
+
+async function carregarEstatisticasExecucao() {
+    try {
+        if (!window.db) return;
+        
+        // Buscar execuções dos últimos 7 dias
+        const setesDiasAtras = new Date();
+        setesDiasAtras.setDate(setesDiasAtras.getDate() - 7);
+        
+        const snapshot = await window.db.collection('automacao')
+            .where('timestamp', '>=', setesDiasAtras.toISOString())
+            .orderBy('timestamp', 'desc')
+            .get();
+        
+        let totalExecucoes = 0;
+        let sucessos = 0;
+        let ultimaFalha = null;
+        
+        snapshot.forEach(doc => {
+            const dados = doc.data();
+            totalExecucoes++;
+            
+            if (dados.status === 'sucesso') {
+                sucessos++;
+            } else if (!ultimaFalha) {
+                ultimaFalha = dados.timestamp;
+            }
+        });
+        
+        // Atualizar interface
+        document.getElementById('execucoes7dias').textContent = totalExecucoes;
+        
+        const taxaSucesso = totalExecucoes > 0 ? Math.round((sucessos / totalExecucoes) * 100) : 0;
+        document.getElementById('taxaSucesso7dias').textContent = `${taxaSucesso}%`;
+        
+        if (ultimaFalha) {
+            const tempoUltimaFalha = Math.round((Date.now() - new Date(ultimaFalha).getTime()) / (1000 * 60 * 60));
+            document.getElementById('ultimaFalha').textContent = `${tempoUltimaFalha}h atrás`;
+        } else {
+            document.getElementById('ultimaFalha').textContent = 'Nenhuma';
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar estatísticas:', error);
+    }
+}
+
+async function mostrarLogsDetalhados() {
+    try {
+        if (!window.db) {
+            mostrarErro('Firebase não disponível');
+            return;
+        }
+        
+        // Buscar último log detalhado
+        const snapshot = await window.db.collection('logs_execucao')
+            .orderBy('fimExecucao', 'desc')
+            .limit(1)
+            .get();
+        
+        if (snapshot.empty) {
+            mostrarErro('Nenhum log detalhado encontrado');
+            return;
+        }
+        
+        const logData = snapshot.docs[0].data();
+        
+        let logsHtml = `
+            <h3>📋 Logs Detalhados da Última Execução</h3>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div><strong>ID Execução:</strong> ${logData.execucaoId}</div>
+                    <div><strong>Duração Total:</strong> ${logData.duracaoTotal}ms</div>
+                    <div><strong>Total de Logs:</strong> ${logData.totalLogs}</div>
+                    <div><strong>Início:</strong> ${new Date(logData.inicioExecucao).toLocaleString('pt-BR')}</div>
+                    <div><strong>Fim:</strong> ${new Date(logData.fimExecucao).toLocaleString('pt-BR')}</div>
+                    <div><strong>Logs por Nível:</strong> 
+                        Info: ${logData.niveis.info} | 
+                        Warn: ${logData.niveis.warn} | 
+                        Error: ${logData.niveis.error}
+                    </div>
+                </div>
+            </div>
+            <div style="max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 12px; background: #2d3748; color: #f7fafc; padding: 15px; border-radius: 8px;">
+        `;
+        
+        logData.logs.forEach(log => {
+            const cor = {
+                info: '#68d391',
+                warn: '#faf089', 
+                error: '#fc8181',
+                debug: '#a0aec0'
+            }[log.nivel] || '#a0aec0';
+            
+            logsHtml += `
+                <div style="margin: 3px 0; padding: 2px 0;">
+                    <span style="color: #a0aec0; font-size: 10px;">[${log.tempoExecucao}ms]</span>
+                    <span style="color: ${cor}; font-weight: bold;">[${log.nivel.toUpperCase()}]</span>
+                    <span style="color: #f7fafc;">${log.mensagem}</span>
+                    ${log.dados ? `<br><span style="color: #cbd5e0; font-size: 11px; margin-left: 20px;">${JSON.stringify(log.dados)}</span>` : ''}
+                </div>
+            `;
+        });
+        
+        logsHtml += '</div>';
+        
+        // Mostrar modal
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.7); display: flex; justify-content: center; 
+            align-items: center; z-index: 1000; overflow-y: auto; padding: 20px;
+        `;
+        
+        modal.innerHTML = `
+            <div style="background: white; padding: 30px; border-radius: 15px; max-width: 900px; width: 100%; max-height: 90vh; overflow-y: auto;">
+                ${logsHtml}
+                <button onclick="this.closest('.modal').remove()" 
+                        style="margin-top: 20px; padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    Fechar
+                </button>
+            </div>
+        `;
+        
+        modal.className = 'modal';
+        document.body.appendChild(modal);
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar logs:', error);
+        mostrarErro('❌ Erro ao carregar logs detalhados');
+    }
+}
+
+async function mostrarHistoricoExecucoes() {
+    try {
+        if (!window.db) {
+            mostrarErro('Firebase não disponível');
+            return;
+        }
+        
+        // Buscar últimas 20 execuções
+        const snapshot = await window.db.collection('automacao')
+            .orderBy('timestamp', 'desc')
+            .limit(20)
+            .get();
+        
+        let historicoHtml = `
+            <h3>⏰ Histórico de Execuções (últimas 20)</h3>
+            <div style="max-height: 500px; overflow-y: auto;">
+        `;
+        
+        if (snapshot.empty) {
+            historicoHtml += '<p style="text-align: center; color: #666; padding: 30px;">Nenhuma execução encontrada.</p>';
+        } else {
+            snapshot.forEach(doc => {
+                const dados = doc.data();
+                const data = new Date(dados.timestamp).toLocaleString('pt-BR');
+                const status = dados.status === 'sucesso' ? '✅' : '❌';
+                const cor = dados.status === 'sucesso' ? '#d4edda' : '#f8d7da';
+                const corTexto = dados.status === 'sucesso' ? '#155724' : '#721c24';
+                
+                historicoHtml += `
+                    <div style="background: ${cor}; color: ${corTexto}; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid ${dados.status === 'sucesso' ? '#28a745' : '#dc3545'};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <strong>${status} ${data}</strong>
+                            <span style="font-size: 12px; opacity: 0.8;">${doc.id}</span>
+                        </div>
+                        <div style="font-size: 14px; margin-bottom: 5px;">${dados.mensagem}</div>
+                        ${dados.detalhes ? `
+                            <div style="font-size: 12px; opacity: 0.8;">
+                                📊 Registros: ${dados.detalhes.totalRegistros || 'N/A'} | 
+                                📱 Aparelhos: ${dados.detalhes.aparelhos || 'N/A'} | 
+                                🎧 Acessórios: ${dados.detalhes.acessorios || 'N/A'}
+                                ${dados.detalhes.tempo_execucao ? ` | ⏱️ ${dados.detalhes.tempo_execucao}ms` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+        }
+        
+        historicoHtml += '</div>';
+        
+        // Mostrar modal
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.7); display: flex; justify-content: center; 
+            align-items: center; z-index: 1000; overflow-y: auto; padding: 20px;
+        `;
+        
+        modal.innerHTML = `
+            <div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto;">
+                ${historicoHtml}
+                <button onclick="this.closest('.modal').remove()" 
+                        style="margin-top: 20px; padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    Fechar
+                </button>
+            </div>
+        `;
+        
+        modal.className = 'modal';
+        document.body.appendChild(modal);
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar histórico:', error);
+        mostrarErro('❌ Erro ao carregar histórico de execuções');
+    }
+}
+
+// ============================================
+// CONFIGURAR EVENTOS DOS BOTÕES
+// ============================================
+
+function configurarEventosMelhorias() {
+    // Backup
+    document.getElementById('btnCriarBackup')?.addEventListener('click', criarBackupManual);
+    document.getElementById('btnRestaurarBackup')?.addEventListener('click', mostrarListaBackups);
+    
+    // Alertas
+    document.getElementById('btnVerAlertas')?.addEventListener('click', mostrarTodosAlertas);
+    
+    // Logs
+    document.getElementById('btnLogsDetalhados')?.addEventListener('click', mostrarLogsDetalhados);
+    document.getElementById('btnHistoricoExecucoes')?.addEventListener('click', mostrarHistoricoExecucoes);
+}
+
+// ============================================
+// CARREGAR HORÁRIO SALVO
+// ============================================
+
+async function carregarHorarioAutomacao() {
+    try {
+        if (!window.db) return;
+        
+        const doc = await window.db.collection('configuracoes').doc('automacao').get();
+        
+        if (doc.exists) {
+            const config = doc.data();
+            const horarioSalvo = config.horarioAutomacao;
+            
+            if (horarioSalvo) {
+                const inputHorario = document.getElementById('horarioAutomacao');
+                const textoHorario = document.getElementById('textoHorario');
+                
+                if (inputHorario) {
+                    inputHorario.value = horarioSalvo;
+                }
+                
+                if (textoHorario) {
+                    textoHorario.textContent = `Todo dia às ${horarioSalvo} os relatórios são baixados automaticamente`;
+                }
+                
+                console.log(`🕒 Horário carregado: ${horarioSalvo}`);
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar horário:', error);
+    }
+}
+
+// ============================================
+// SEÇÃO DE AUTOMAÇÃO - CONFIGURAÇÃO ORIGINAL
+// ============================================
+
+// Configurar automação (função original melhorada)
 function configurarAutomacao() {
     console.log('🤖 Configurando automação...');
     
@@ -2184,7 +3209,7 @@ function adicionarBotaoAutomacao() {
                             <h4 style="color: #28a745; margin-bottom: 10px;">📋 Como funciona:</h4>
                             <ul style="font-size: 14px; color: #666; padding-left: 20px;">
                                 <li id="textoHorario">Todo dia às 15:30 os relatórios são baixados automaticamente</li>
-                                <li>Filtra sempre do dia 1 do mês atual até hoje</li>
+                                <li><strong>SEMPRE do dia 1 do mês atual até hoje</strong></li>
                                 <li>Os dados são processados e atualizados no Firebase</li>
                                 <li>Todos os painéis são atualizados automaticamente</li>
                                 <li>Notificações são enviadas em caso de erro</li>
@@ -2252,7 +3277,6 @@ async function verificarStatusAutomacao() {
 function configurarBotaoTeste() {
     const btnTeste = document.getElementById('btnTesteAutomacao');
     const btnHistorico = document.getElementById('btnHistoricoAutomacao');
-    const btnEditHorario = document.getElementById('editHorarioAutomacao');
     
     if (btnTeste) {
         btnTeste.addEventListener('click', async () => {
@@ -2291,151 +3315,6 @@ function configurarBotaoTeste() {
         btnHistorico.addEventListener('click', () => {
             mostrarHistoricoAutomacao();
         });
-    }
-    
-    // NOVO: Configurar edição de horário
-    if (btnEditHorario) {
-        btnEditHorario.addEventListener('click', () => {
-            toggleEditarHorario();
-        });
-    }
-}
-
-// NOVA FUNÇÃO: Alternar edição de horário
-function toggleEditarHorario() {
-    const inputHorario = document.getElementById('horarioAutomacao');
-    const btnEdit = document.getElementById('editHorarioAutomacao');
-    const textoHorario = document.getElementById('textoHorario');
-    
-    if (!inputHorario || !btnEdit) return;
-    
-    const isEditando = btnEdit.textContent.includes('Salvar');
-    
-    if (isEditando) {
-        // MODO SALVAR → VISUALIZAR
-        console.log('💾 Salvando horário da automação...');
-        
-        const novoHorario = inputHorario.value;
-        if (!novoHorario) {
-            mostrarErro('Digite um horário válido!');
-            return;
-        }
-        
-        // Salvar horário no Firebase
-        salvarHorarioAutomacao(novoHorario);
-        
-        // Desabilitar campo
-        inputHorario.disabled = true;
-        inputHorario.style.backgroundColor = '#e9ecef';
-        inputHorario.style.color = '#6c757d';
-        
-        // Mudar botão
-        btnEdit.textContent = 'Editar Horário';
-        btnEdit.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
-        
-        // Atualizar texto explicativo
-        if (textoHorario) {
-            textoHorario.textContent = `Todo dia às ${novoHorario} os relatórios são baixados automaticamente`;
-        }
-        
-        console.log('✅ Horário alterado para:', novoHorario);
-        
-    } else {
-        // MODO VISUALIZAR → EDITAR
-        console.log('✏️ Entrando em modo edição de horário');
-        
-        // Habilitar campo
-        inputHorario.disabled = false;
-        inputHorario.style.backgroundColor = '#ffffff';
-        inputHorario.style.color = '#495057';
-        inputHorario.style.borderColor = '#ced4da';
-        
-        // Mudar botão
-        btnEdit.textContent = 'Salvar Horário';
-        btnEdit.style.background = 'linear-gradient(135deg, #198754, #20c997)';
-        
-        // Focar no campo
-        inputHorario.focus();
-        
-        console.log('✅ Modo edição de horário ativado');
-    }
-}
-
-// NOVA FUNÇÃO: Salvar horário no Firebase
-async function salvarHorarioAutomacao(horario) {
-    try {
-        if (!window.db) {
-            throw new Error('Firebase não está conectado');
-        }
-        
-        console.log(`💾 Salvando horário: ${horario}`);
-        
-        const configData = {
-            horarioAutomacao: horario,
-            ultimaAtualizacao: new Date().toISOString()
-        };
-        
-        await window.db.collection('configuracoes').doc('automacao').set(configData);
-        
-        console.log('✅ Horário salvo no Firebase!');
-        
-        // Feedback visual
-        const btnEdit = document.getElementById('editHorarioAutomacao');
-        const originalText = btnEdit.textContent;
-        btnEdit.textContent = '✅ Salvo!';
-        btnEdit.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
-        
-        setTimeout(() => {
-            btnEdit.textContent = 'Editar Horário';
-        }, 2000);
-        
-        // Mostrar aviso sobre redeploy
-        mostrarSucesso(`✅ Horário alterado para ${horario}!<br><strong>⚠️ Para ativar a mudança, é necessário fazer redeploy no Netlify.</strong>`);
-        
-    } catch (error) {
-        console.error('❌ Erro ao salvar horário:', error);
-        
-        const btnEdit = document.getElementById('editHorarioAutomacao');
-        btnEdit.textContent = '❌ Erro!';
-        btnEdit.style.background = '#dc3545';
-        
-        setTimeout(() => {
-            btnEdit.textContent = 'Salvar Horário';
-        }, 2000);
-        
-        mostrarErro('❌ Erro ao salvar horário da automação');
-    }
-}
-
-// NOVA FUNÇÃO: Carregar horário salvo
-async function carregarHorarioAutomacao() {
-    try {
-        if (!window.db) return;
-        
-        const doc = await window.db.collection('configuracoes').doc('automacao').get();
-        
-        if (doc.exists) {
-            const config = doc.data();
-            const horarioSalvo = config.horarioAutomacao;
-            
-            if (horarioSalvo) {
-                const inputHorario = document.getElementById('horarioAutomacao');
-                const textoHorario = document.getElementById('textoHorario');
-                
-                if (inputHorario) {
-                    inputHorario.value = horarioSalvo;
-                }
-                
-                if (textoHorario) {
-                    textoHorario.textContent = `Todo dia às ${horarioSalvo} os relatórios são baixados automaticamente`;
-                }
-                
-                console.log(`🕒 Horário carregado: ${horarioSalvo}`);
-            }
-        }
-        
-    } catch (error) {
-        console.error('❌ Erro ao carregar horário:', error);
     }
 }
 
@@ -2500,51 +3379,43 @@ async function mostrarHistoricoAutomacao() {
     }
 }
 
-// Salvar log de execução
-async function salvarLogAutomacao(status, mensagem, detalhes = null) {
-    try {
-        if (!window.db) return;
-        
-        const logData = {
-            timestamp: new Date().toISOString(),
-            status: status,
-            mensagem: mensagem,
-            detalhes: detalhes
-        };
-        
-        // Salvar log individual
-        await window.db.collection('automacao').add(logData);
-        
-        // Atualizar status geral
-        await window.db.collection('automacao').doc('historico').set({
-            ultimaExecucao: logData.timestamp,
-            status: status,
-            mensagem: mensagem
-        });
-        
-    } catch (error) {
-        console.error('❌ Erro ao salvar log:', error);
-    }
-}
+// ============================================
+// INICIALIZAÇÃO DAS MELHORIAS
+// ============================================
 
-// Função para mostrar sucesso
-function mostrarSucesso(mensagem) {
-    const successMsg = document.getElementById('successMessage');
-    const successDetails = document.getElementById('successDetails');
-    const errorMsg = document.getElementById('errorMessage');
-    
-    if (successMsg && successDetails) {
-        successDetails.innerHTML = mensagem;
-        successMsg.style.display = 'block';
+// Função para inicializar melhorias
+function inicializarMelhorias() {
+    setTimeout(() => {
+        console.log('🔧 Inicializando melhorias do sistema...');
         
-        if (errorMsg) {
-            errorMsg.style.display = 'none';
+        // Adicionar seções se estiver na configuração
+        if (document.getElementById('statusAutomacao')) {
+            melhorarSecaoAutomacao();
+            adicionarSecaoBackupEAlertas();
+            configurarEventosMelhorias();
+            
+            // Carregar dados iniciais
+            setTimeout(() => {
+                carregarStatusBackup();
+                carregarAlertasAtivos();
+                carregarEstatisticasExecucao();
+                carregarHorarioAutomacao();
+                
+                // Atualizar a cada 2 minutos
+                setInterval(() => {
+                    carregarAlertasAtivos();
+                    carregarEstatisticasExecucao();
+                }, 2 * 60 * 1000);
+                
+                // Atualizar backup a cada 5 minutos
+                setInterval(carregarStatusBackup, 5 * 60 * 1000);
+                
+            }, 1000);
         }
         
-        successMsg.scrollIntoView({ behavior: 'smooth' });
-    } else {
-        alert(mensagem);
-    }
+        console.log('✅ Melhorias inicializadas com sucesso!');
+        
+    }, 3000);
 }
 
 // ============================================
@@ -2647,7 +3518,31 @@ function mostrarErro(mensagem) {
     }
 }
 
-// Adicionar configuração de automação ao iniciarSistema
+// Função para mostrar sucesso
+function mostrarSucesso(mensagem) {
+    const successMsg = document.getElementById('successMessage');
+    const successDetails = document.getElementById('successDetails');
+    const errorMsg = document.getElementById('errorMessage');
+    
+    if (successMsg && successDetails) {
+        successDetails.innerHTML = mensagem;
+        successMsg.style.display = 'block';
+        
+        if (errorMsg) {
+            errorMsg.style.display = 'none';
+        }
+        
+        successMsg.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        alert(mensagem);
+    }
+}
+
+// ============================================
+// MODIFICAR INICIALIZAÇÃO PRINCIPAL
+// ============================================
+
+// Adicionar melhorias ao iniciarSistema original
 const iniciarSistemaOriginal = window.iniciarSistema;
 window.iniciarSistema = function() {
     // Executar função original
@@ -2656,7 +3551,7 @@ window.iniciarSistema = function() {
     // Adicionar automação
     setTimeout(() => {
         configurarAutomacao();
-        // NOVO: Carregar horário salvo
-        carregarHorarioAutomacao();
+        // Adicionar melhorias
+        inicializarMelhorias();
     }, 2000);
 };

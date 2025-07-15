@@ -1,12 +1,13 @@
-// netlify/functions/cron-scheduler.js
-// Função que agenda e executa a automação diariamente às 23h
+// netlify/functions/cron-scheduler.js - VERSÃO CORRIGIDA
+// Função que agenda e executa a automação diariamente
 
 exports.handler = async (event, context) => {
+    console.log('⏰ Cron scheduler executado');
+    
     // Verificar se é uma chamada do cron job
     const isCronJob = event.headers['x-netlify-cron'] === 'true';
     
     if (!isCronJob) {
-        // Chamada manual para testar
         console.log('🔧 Teste manual da automação');
     } else {
         console.log('⏰ Execução automática via cron job');
@@ -23,7 +24,7 @@ exports.handler = async (event, context) => {
         if (body.success) {
             console.log('✅ Automação executada com sucesso:', body);
             
-            // Opcional: Enviar notificação por email ou webhook
+            // Opcional: Enviar notificação
             await enviarNotificacao({
                 tipo: 'sucesso',
                 mensagem: `Relatórios processados automaticamente`,
@@ -46,8 +47,19 @@ exports.handler = async (event, context) => {
     } catch (error) {
         console.error('❌ Erro crítico no agendador:', error);
         
+        // Enviar notificação de erro crítico
+        await enviarNotificacao({
+            tipo: 'erro_critico',
+            mensagem: `Erro crítico no agendador: ${error.message}`,
+            detalhes: { error: error.message, stack: error.stack }
+        });
+        
         return {
             statusCode: 500,
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
                 success: false,
                 message: 'Erro crítico no agendador',
@@ -64,22 +76,50 @@ async function enviarNotificacao(dados) {
         
         // Exemplo com webhook do Discord/Slack
         if (process.env.WEBHOOK_URL) {
-            const fetch = require('node-fetch');
+            const https = require('https');
+            const url = require('url');
             
-            const payload = {
-                content: `🤖 **Automação ICLUB**\n\n**Status:** ${dados.tipo}\n**Mensagem:** ${dados.mensagem}\n**Horário:** ${new Date().toLocaleString('pt-BR')}`
-            };
+            const emoji = {
+                'sucesso': '✅',
+                'erro': '❌', 
+                'erro_critico': '🚨'
+            }[dados.tipo] || '📋';
             
-            await fetch(process.env.WEBHOOK_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+            const payload = JSON.stringify({
+                content: `${emoji} **Automação ICLUB**\n\n**Status:** ${dados.tipo}\n**Mensagem:** ${dados.mensagem}\n**Horário:** ${new Date().toLocaleString('pt-BR')}`
             });
             
-            console.log('✅ Notificação enviada com sucesso');
+            const webhookUrl = url.parse(process.env.WEBHOOK_URL);
+            
+            const options = {
+                hostname: webhookUrl.hostname,
+                port: 443,
+                path: webhookUrl.path,
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': payload.length
+                }
+            };
+            
+            return new Promise((resolve, reject) => {
+                const req = https.request(options, (res) => {
+                    console.log(`✅ Notificação enviada: ${res.statusCode}`);
+                    resolve();
+                });
+                
+                req.on('error', (error) => {
+                    console.error('❌ Erro ao enviar notificação:', error);
+                    resolve(); // Não falhar por causa da notificação
+                });
+                
+                req.write(payload);
+                req.end();
+            });
         }
         
     } catch (error) {
         console.error('❌ Erro ao enviar notificação:', error);
+        // Não falhar por causa da notificação
     }
 }
