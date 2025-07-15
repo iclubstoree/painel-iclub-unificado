@@ -1,0 +1,1911 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Painel ICLUB Unificado</title>
+    
+    <!-- Firebase CDN v8 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-firestore.min.js"></script>
+    
+    <!-- SheetJS para Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            line-height: 1.4;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        /* MENU MOBILE */
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: #28a745;
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .mobile-menu-toggle span {
+            width: 25px;
+            height: 3px;
+            background: white;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .mobile-menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .mobile-menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -6px);
+        }
+
+        .seletor-lojas {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .seletor-lojas.mobile-hidden {
+            display: none;
+        }
+
+        .seletor-lojas.mobile-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            height: 100vh;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding: 80px 20px 20px;
+            gap: 15px;
+            transform: translateX(-100%);
+        }
+
+        .seletor-lojas.mobile-menu.active {
+            transform: translateX(0);
+        }
+
+        .seletor-lojas.mobile-menu .loja-btn {
+            width: 100%;
+            justify-content: flex-start;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .loja-btn {
+            background: white;
+            border: 2px solid #28a745;
+            color: #28a745;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .loja-btn:hover {
+            background: #28a745;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .loja-btn.active {
+            background: #28a745;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .logout-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logout-btn {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        /* TELA INICIAL */
+        #tela-inicial {
+            text-align: center;
+            padding: 50px 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .tela-inicial h2 {
+            color: #28a745;
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+
+        .tela-inicial p {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        /* SISTEMA DE LOGIN */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .login-overlay.hidden {
+            display: none;
+        }
+
+        .login-modal {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .login-title {
+            color: #28a745;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .login-subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: #28a745;
+        }
+
+        .login-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .login-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .login-cancel {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .login-error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* SEÇÕES */
+        .secao-loja {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .secao-loja.hidden {
+            display: none;
+        }
+
+        .secao-header {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .secao-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .timestamp {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+
+        .period {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 0;
+        }
+
+        /* CARDS PRINCIPAIS - NOVO DESIGN MOBILE */
+        .meta-card {
+            margin: 15px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border-left: 5px solid #28a745;
+        }
+
+        .meta-card-header {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+        }
+
+        .meta-item {
+            padding: 20px 15px;
+            text-align: center;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .meta-item:nth-child(odd) {
+            border-right: 1px solid #f0f0f0;
+        }
+
+        .meta-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .meta-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .meta-value.highlight {
+            color: #28a745;
+            font-size: 28px;
+        }
+
+        .meta-value.urgent {
+            color: #dc3545;
+            font-size: 26px;
+        }
+
+        .meta-sublabel {
+            font-size: 10px;
+            color: #888;
+            font-weight: 500;
+        }
+
+        /* PROGRESSO VISUAL */
+        .progress-container {
+            padding: 15px;
+            background: #f8f9fa;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* RANKING VENDEDORAS - NOVO VISUAL IGUAL À IMAGEM */
+        .ranking-category {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .ranking-category:last-child {
+            border-bottom: none;
+        }
+
+        .ranking-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #28a745;
+        }
+
+        .vendedora-ranking {
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+        }
+
+        .vendedora-ranking:last-child {
+            margin-bottom: 0;
+        }
+
+        /* LINHA SUPERIOR: POSIÇÃO/NOME + VENDIDOS */
+        .vendedora-linha-superior {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .vendedora-posicao-nome {
+            font-size: 16px;
+            font-weight: 700;
+            color: #28a745;
+        }
+
+        .vendedora-vendidos {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        /* LINHA INFERIOR: META + FALTAM */
+        .vendedora-linha-inferior {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .vendedora-meta-texto {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .vendedora-falta-texto {
+            font-size: 12px;
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        /* BARRA DE PROGRESSO PERSONALIZADA */
+        .vendedora-progress-bar {
+            height: 25px;
+            background: #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .vendedora-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            border-radius: 12px;
+            transition: width 0.3s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .vendedora-progress-vendidos {
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .vendedora-progress-faltam {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #495057;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        /* CARDS ADMINISTRATIVOS - NOVO VISUAL */
+        .admin-section {
+            margin: 20px 0;
+        }
+
+        .admin-category-title {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 18px;
+            margin-bottom: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .admin-subcategory {
+            margin: 15px 0;
+        }
+
+        .admin-subcategory-title {
+            color: #28a745;
+            padding: 12px 0;
+            font-weight: 700;
+            font-size: 18px;
+            margin-bottom: 15px;
+            text-align: left;
+            border-bottom: 2px solid #28a745;
+        }
+
+        /* CARDS DE METAS GERAIS - NOVO VISUAL DESTACADO */
+        .admin-metas-gerais-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-left: 5px solid #28a745;
+            border-top: 1px solid #e9ecef;
+            border-right: 1px solid #e9ecef;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .admin-metas-gerais-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f8f9fa;
+        }
+
+        .admin-metas-gerais-titulo {
+            font-size: 20px;
+            font-weight: 700;
+            color: #28a745;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .admin-metas-gerais-meta-destaque {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2c3e50;
+            background: #f8f9fa;
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 2px solid #28a745;
+        }
+
+        .admin-metas-gerais-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .admin-metas-gerais-stat {
+            text-align: center;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .admin-metas-gerais-stat-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
+        }
+
+        .admin-metas-gerais-stat-valor {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .admin-metas-gerais-stat-valor.highlight {
+            color: #28a745;
+            font-size: 22px;
+        }
+
+        .admin-metas-gerais-stat-valor.urgent {
+            color: #dc3545;
+            font-size: 20px;
+        }
+
+        .admin-metas-gerais-progress-container {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .admin-metas-gerais-progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .admin-metas-gerais-progress-bar {
+            height: 25px;
+            background: #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .admin-metas-gerais-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            border-radius: 12px;
+            transition: width 0.3s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .admin-metas-gerais-progress-vendidos {
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .admin-metas-gerais-progress-faltam {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #495057;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        /* RESPONSIVIDADE PARA METAS GERAIS */
+        @media (max-width: 768px) {
+            .admin-metas-gerais-header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .admin-metas-gerais-stats {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            
+            .admin-metas-gerais-stat {
+                padding: 10px;
+            }
+            
+            .admin-metas-gerais-stat-valor {
+                font-size: 16px;
+            }
+        }
+
+        .admin-loja-group {
+            margin: 10px 0;
+        }
+
+        .admin-loja-title {
+            background: #f8f9fa;
+            color: #495057;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 8px;
+            border-left: 4px solid #28a745;
+        }
+
+        .admin-vendedor-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-left: 3px solid #28a745;
+        }
+
+        .admin-vendedor-linha-superior {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .admin-vendedor-nome {
+            font-size: 14px;
+            font-weight: 700;
+            color: #28a745;
+        }
+
+        .admin-vendedor-valor {
+            font-size: 14px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .admin-vendedor-linha-inferior {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .admin-vendedor-meta {
+            font-size: 11px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .admin-vendedor-falta {
+            font-size: 11px;
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .admin-vendedor-progress-bar {
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .admin-vendedor-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .admin-vendedor-progress-vendidos {
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+        }
+
+        .admin-vendedor-progress-faltam {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #495057;
+            font-weight: bold;
+            font-size: 10px;
+        }
+
+        /* RANKING DE VENDEDORAS - NOVO VISUAL RESPONSIVO */
+        .admin-ranking-container {
+            width: 100%;
+        }
+
+        /* VERSÃO DESKTOP - TABELA */
+        .admin-ranking-desktop {
+            display: block;
+        }
+
+        .admin-ranking-mobile {
+            display: none;
+        }
+
+        .admin-ranking-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .admin-ranking-table th {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .admin-ranking-table td {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        .admin-ranking-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .admin-ranking-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .admin-ranking-table tr:hover {
+            background: #e8f5e8;
+        }
+
+        /* COLUNA COLOCAÇÃO E VENDEDORA */
+        .ranking-posicao-nome {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .ranking-posicao {
+            font-weight: 700;
+            color: #ffc107;
+            font-size: 16px;
+        }
+
+        .ranking-vendedora {
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: 15px;
+        }
+
+        .ranking-loja {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        /* COLUNA QUANTIDADE */
+        .ranking-quantidade {
+            text-align: center;
+            font-size: 16px;
+            color: #28a745;
+        }
+
+        .ranking-quantidade strong {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        /* COLUNA FATURAMENTO */
+        .ranking-faturamento {
+            text-align: right;
+            font-size: 16px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        /* CARDS MOBILE - NOVO VISUAL MAIS ATRAENTE */
+        .admin-ranking-card-mobile {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-left: 5px solid #28a745;
+            border: 1px solid #e9ecef;
+        }
+
+        .ranking-mobile-header {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f8f9fa;
+        }
+
+        .ranking-mobile-posicao {
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffc107;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .ranking-mobile-vendedora {
+            font-size: 18px;
+            font-weight: 700;
+            color: #28a745;
+            margin-bottom: 5px;
+        }
+
+        .ranking-mobile-loja {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            background: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .ranking-mobile-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .ranking-mobile-stat {
+            text-align: center;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .ranking-mobile-label {
+            font-size: 11px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .ranking-mobile-valor {
+            font-size: 16px;
+            color: #2c3e50;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .ranking-mobile-valor.destaque {
+            color: #28a745;
+            font-size: 18px;
+        }
+
+        .admin-ranking-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-left: 3px solid #ffc107;
+        }
+
+        .admin-ranking-posicao {
+            font-size: 12px;
+            font-weight: 700;
+            color: #ffc107;
+            margin-bottom: 5px;
+        }
+
+        .admin-ranking-nome {
+            font-size: 14px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .admin-ranking-detalhes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 11px;
+        }
+
+        .admin-ranking-item {
+            text-align: center;
+        }
+
+        .admin-ranking-label {
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .admin-ranking-valor {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .admin-top5-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-left: 3px solid #dc3545;
+        }
+
+        .admin-top5-posicao {
+            font-size: 12px;
+            font-weight: 700;
+            color: #dc3545;
+            margin-bottom: 5px;
+        }
+
+        .admin-top5-produto {
+            font-size: 13px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .admin-top5-detalhes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 11px;
+        }
+
+        .admin-top5-item {
+            text-align: center;
+        }
+
+        .admin-top5-label {
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .admin-top5-valor {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .admin-loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        /* TABELA ADMINISTRATIVA - ESTRUTURA ANTERIOR */
+        .admin-table-old {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .admin-table-old th {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 12px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .admin-table-old .table-header {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .admin-table-old td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        .admin-table-old tr:last-child td {
+            border-bottom: none;
+        }
+
+        .admin-table-old tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .admin-table-old .loading {
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        /* BADGES */
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge.danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* UPLOAD */
+        .upload-section {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .upload-header {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .upload-content {
+            padding: 30px;
+        }
+
+        .upload-area {
+            border: 3px dashed #28a745;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            background: #ffffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            background: #f8fff8;
+            border-color: #20c997;
+        }
+
+        .upload-area.file-selected {
+            background: #d4edda;
+            border-color: #28a745;
+            border-style: solid;
+        }
+
+        .upload-text {
+            font-size: 16px;
+            color: #28a745;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .upload-description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .file-name {
+            background: #28a745;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: none;
+            margin-top: 10px;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .upload-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .upload-btn:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .process-btn {
+            background: linear-gradient(45deg, #dc3545, #e74c3c);
+            font-size: 16px;
+            padding: 15px 30px;
+            margin-top: 20px;
+        }
+
+        .success-message, .error-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f1aeb5;
+        }
+
+        .connection-status {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+            display: none;
+        }
+
+        /* EDIÇÃO DE METAS */
+        .config-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border-left: 5px solid #28a745;
+        }
+
+        .config-title {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .config-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .config-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .config-input {
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            background: #e9ecef;
+            color: #6c757d;
+        }
+
+        .config-input:not(:disabled) {
+            background: white;
+            color: #495057;
+            border-color: #ced4da;
+        }
+
+        .config-input:focus {
+            outline: none;
+            border-color: #28a745;
+        }
+
+        .edit-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .edit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 768px) {
+            .container {
+                padding: 5px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .mobile-menu-toggle {
+                display: flex;
+            }
+            
+            .seletor-lojas:not(.mobile-menu) {
+                display: none;
+            }
+            
+            .loja-btn {
+                padding: 10px 15px;
+                font-size: 12px;
+            }
+            
+            .config-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .admin-stats {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .admin-ranking-desktop {
+                display: none;
+            }
+            
+            .admin-ranking-mobile {
+                display: block;
+            }
+        }
+
+        /* MELHORIAS VISUAIS PARA DESKTOP */
+        @media (min-width: 769px) {
+            .admin-ranking-table {
+                font-size: 15px;
+            }
+            
+            .admin-ranking-table th {
+                font-size: 15px;
+                padding: 18px;
+            }
+            
+            .admin-ranking-table td {
+                padding: 18px;
+            }
+            
+            .ranking-posicao {
+                font-size: 18px;
+            }
+            
+            .ranking-vendedora {
+                font-size: 16px;
+            }
+            
+            .ranking-quantidade {
+                font-size: 17px;
+            }
+            
+            .ranking-quantidade strong {
+                font-size: 20px;
+            }
+            
+            .ranking-faturamento {
+                font-size: 17px;
+            }
+        }
+
+        /* LOADING */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* HIDDEN */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>📊 Metas iClub Unificado</h1>
+        </div>
+
+        <!-- STATUS DE CONEXÃO -->
+        <div id="connectionStatus" class="connection-status"></div>
+
+        <!-- MENU MOBILE -->
+        <div class="mobile-menu-toggle" id="mobileMenuToggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+        <!-- SELETOR DE LOJAS -->
+        <div class="seletor-lojas" id="seletorLojas">
+            <button class="loja-btn" data-loja="configuracao">⚙️ Configuração</button>
+            <button class="loja-btn" data-loja="administrativo">📊 Administrativo</button>
+            <button class="loja-btn" data-loja="castanhal">🏢 Castanhal</button>
+            <button class="loja-btn" data-loja="belem">🏢 Belém</button>
+            <button class="loja-btn" data-loja="mix">🏢 Mix</button>
+        </div>
+
+        <!-- BOTÃO LOGOUT -->
+        <div class="logout-section">
+            <button id="logoutBtn" class="logout-btn">Sair de Todas as Sessões</button>
+        </div>
+
+        <!-- TELA INICIAL -->
+        <div id="tela-inicial">
+            <h2>👋 Bem-vindo ao Sistema iClub</h2>
+            <p>Selecione uma loja acima para acessar o painel correspondente</p>
+            <div style="font-size: 48px; margin: 20px 0;">📊</div>
+            <p>Sistema completo de gestão de metas e vendas</p>
+        </div>
+
+        <!-- SEÇÃO CONFIGURAÇÃO -->
+        <div id="secao-configuracao" class="secao-loja hidden">
+            <div class="secao-header">
+                <div class="secao-title">⚙️ CONFIGURAÇÃO DO SISTEMA</div>
+                <div class="timestamp">🔧 Upload de dados e configuração de metas</div>
+            </div>
+
+            <div class="content">
+                <!-- UPLOAD APARELHOS -->
+                <div class="upload-section">
+                    <div class="upload-header">
+                        <h3>📱 Upload Aparelhos</h3>
+                    </div>
+                    <div class="upload-content">
+                        <div id="uploadAreaAparelhos" class="upload-area">
+                            <div class="upload-text">📁 Clique aqui ou arraste o arquivo de aparelhos</div>
+                            <div class="upload-description">Formatos suportados: .xlsx, .xls, .csv</div>
+                            <input type="file" id="uploadFileAparelhos" accept=".xlsx,.xls,.csv" style="display: none;">
+                        </div>
+                        <div id="fileNameAparelhos" class="file-name"></div>
+                        <button id="btnUploadAparelhos" class="upload-btn" disabled>📱 ENVIAR APARELHOS</button>
+                    </div>
+                </div>
+
+                <!-- UPLOAD ACESSÓRIOS -->
+                <div class="upload-section">
+                    <div class="upload-header">
+                        <h3>🎧 Upload Acessórios</h3>
+                    </div>
+                    <div class="upload-content">
+                        <div id="uploadAreaAcessorios" class="upload-area">
+                            <div class="upload-text">📁 Clique aqui ou arraste o arquivo de acessórios</div>
+                            <div class="upload-description">Formatos suportados: .xlsx, .xls, .csv</div>
+                            <input type="file" id="uploadFileAcessorios" accept=".xlsx,.xls,.csv" style="display: none;">
+                        </div>
+                        <div id="fileNameAcessorios" class="file-name"></div>
+                        <button id="btnUploadAcessorios" class="upload-btn" disabled>🎧 ENVIAR ACESSÓRIOS</button>
+                    </div>
+                </div>
+
+                <!-- PROCESSAR TUDO -->
+                <div class="upload-section">
+                    <div class="upload-content" style="text-align: center;">
+                        <button id="btnProcessarTudo" class="upload-btn process-btn" disabled>
+                            🚀 PROCESSAR E ATUALIZAR TODOS OS PAINÉIS
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CONFIGURAÇÃO DE METAS -->
+                <div class="upload-section">
+                    <div class="upload-header">
+                        <h3>🎯 Configuração de Metas</h3>
+                    </div>
+                    <div class="upload-content">
+                        <!-- CASTANHAL -->
+                        <div id="config-castanhal" class="config-item">
+                            <div class="config-title">🏢 METAS CASTANHAL</div>
+                            <div class="config-grid">
+                                <div class="config-field">
+                                    <label class="config-label">Aparelhos (Mês)</label>
+                                    <input type="number" id="castanhal_meta_aparelhos" class="config-input" disabled>
+                                </div>
+                                <div class="config-field">
+                                    <label class="config-label">Aparelhos (Vendedor)</label>
+                                    <input type="number" id="castanhal_meta_vendedor_aparelhos" class="config-input" disabled>
+                                </div>
+                                <div class="config-field">
+                                    <label class="config-label">Acessórios (Mês)</label>
+                                    <input type="text" id="castanhal_meta_acessorios" class="config-input" disabled>
+                                </div>
+                                <div class="config-field">
+                                    <label class="config-label">Acessórios (Vendedor)</label>
+                                    <input type="text" id="castanhal_meta_vendedor_acessorios" class="config-input" disabled>
+                                </div>
+                            </div>
+                            <button id="editCastanhal" class="edit-btn">Editar Metas</button>
+                        </div>
+
+                        <!-- BELÉM -->
+                        <div id="config-belem" class="config-item">
+                            <div class="config-title">🏢 METAS BELÉM</div>
+                            <div class="config-grid">
+                                <div class="config-field">
+                                    <label class="config-label">Aparelhos (Mês)</label>
+                                    <input type="number" id="belem_meta_aparelhos" class="config-input" disabled>
+                                </div>
+                                <div class="config-field">
+                                    <label class="config-label">Aparelhos (Vendedor)</label>
+                                    <input type="number" id="belem_meta_vendedor_aparelhos" class="config-input" disabled>
+                                </div>
+                                <div class="config-field">
+                                    <label class="config-label">Acessórios (Mês)</label>
+                                    <input type="text" id="belem_meta_acessorios" class="config-input" disabled>
+                                </div>
+                                <div class="config-field">
+                                    <label class="config-label">Acessórios (Vendedor)</label>
+                                    <input type="text" id="belem_meta_vendedor_acessorios" class="config-input" disabled>
+                                </div>
+                            </div>
+                            <button id="editBelem" class="edit-btn">Editar Metas</button>
+                        </div>
+
+                        <!-- MIX -->
+                        <div id="config-mix" class="config-item">
+                            <div class="config-title">🏢 METAS MIX</div>
+                            <div class="config-grid">
+                                <div class="config-field">
+                                    <label class="config-label">Aparelhos (Mês)</label>
+                                    <input type="number" id="mix_meta_aparelhos" class="config-input" disabled>
+                                </div>
+                                <div class="config-field">
+                                    <label class="config-label">Aparelhos (Vendedor)</label>
+                                    <input type="number" id="mix_meta_vendedor_aparelhos" class="config-input" disabled>
+                                </div>
+                                <div class="config-field">
+                                    <label class="config-label">Acessórios (Mês)</label>
+                                    <input type="text" id="mix_meta_acessorios" class="config-input" disabled>
+                                </div>
+                                <div class="config-field">
+                                    <label class="config-label">Acessórios (Vendedor)</label>
+                                    <input type="text" id="mix_meta_vendedor_acessorios" class="config-input" disabled>
+                                </div>
+                            </div>
+                            <button id="editMix" class="edit-btn">Editar Metas</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MENSAGENS -->
+                <div id="successMessage" class="success-message">
+                    <strong>✅ Sucesso!</strong>
+                    <div id="successDetails"></div>
+                </div>
+
+                <div id="errorMessage" class="error-message">
+                    <strong>❌ Erro:</strong>
+                    <span id="errorText"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TEMPLATE LOJA -->
+        <div id="template-loja" class="secao-loja hidden">
+            <div class="secao-header">
+                <div id="titulo-loja" class="secao-title">🏢 METAS ICLUB</div>
+                <div id="loja_lastUpdate" class="timestamp">🕒 Carregando...</div>
+                <div id="loja_periodoVendas" class="period">📅 Carregando período...</div>
+            </div>
+
+            <div class="content">
+                <!-- APARELHOS -->
+                <div class="meta-card">
+                    <div class="meta-card-header">
+                        📱 Metas de Aparelhos
+                    </div>
+                    
+                    <div class="meta-grid">
+                        <div class="meta-item">
+                            <div class="meta-label">Meta do Mês</div>
+                            <div id="metaAparelhosMes" class="meta-value">-</div>
+                            <div class="meta-sublabel">aparelhos</div>
+                        </div>
+                        
+                        <div class="meta-item">
+                            <div class="meta-label">Vendidos</div>
+                            <div id="vendidosAparelhos" class="meta-value highlight">-</div>
+                            <div class="meta-sublabel">aparelhos</div>
+                        </div>
+                        
+                        <div class="meta-item">
+                            <div class="meta-label">Ainda Faltam</div>
+                            <div id="faltamAparelhos" class="meta-value urgent">-</div>
+                            <div class="meta-sublabel">aparelhos</div>
+                        </div>
+                        
+                        <div class="meta-item">
+                            <div class="meta-label">💰 Vendas por Dia</div>
+                            <div id="vendaDiariaAparelhos" class="meta-value highlight">-</div>
+                            <div class="meta-sublabel">para bater a meta</div>
+                        </div>
+                    </div>
+
+                    <div class="progress-container">
+                        <div class="progress-label">
+                            <span>Progresso de aparelhos: <span id="progressoAparelhos">0/0</span></span>
+                            <span id="percentAparelhos" class="badge warning">0%</span>
+                        </div>
+                        <div class="progress-bar" style="height: 20px;">
+                            <div id="barraAparelhosGeral" class="progress-fill" style="width: 0%; position: relative; display: flex; align-items: center; justify-content: center;">
+                                <span id="vendidosProgressoAparelhos" style="color: white; font-weight: bold; font-size: 12px;">0</span>
+                            </div>
+                            <div id="faltamProgressoAparelhos" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #495057; font-weight: bold; font-size: 12px;">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ACESSÓRIOS -->
+                <div class="meta-card">
+                    <div class="meta-card-header">
+                        🎧 Metas de Acessórios
+                    </div>
+                    
+                    <div class="meta-grid">
+                        <div class="meta-item">
+                            <div class="meta-label">Meta do Mês</div>
+                            <div id="metaAcessoriosMes" class="meta-value">-</div>
+                            <div class="meta-sublabel">em vendas</div>
+                        </div>
+                        
+                        <div class="meta-item">
+                            <div class="meta-label">Vendidos</div>
+                            <div id="vendidosAcessorios" class="meta-value highlight">-</div>
+                            <div class="meta-sublabel">em vendas</div>
+                        </div>
+                        
+                        <div class="meta-item">
+                            <div class="meta-label">Ainda Faltam</div>
+                            <div id="faltamAcessorios" class="meta-value urgent">-</div>
+                            <div class="meta-sublabel">em vendas</div>
+                        </div>
+                        
+                        <div class="meta-item">
+                            <div class="meta-label">💰 Vendas por Dia</div>
+                            <div id="vendaDiariaAcessorios" class="meta-value highlight">-</div>
+                            <div class="meta-sublabel">para bater a meta</div>
+                        </div>
+                    </div>
+
+                    <div class="progress-container">
+                        <div class="progress-label">
+                            <span>Progresso de acessórios: <span id="progressoAcessorios">R$ 0/R$ 0</span></span>
+                            <span id="percentAcessorios" class="badge warning">0%</span>
+                        </div>
+                        <div class="progress-bar" style="height: 20px;">
+                            <div id="barraAcessoriosGeral" class="progress-fill" style="width: 0%; position: relative; display: flex; align-items: center; justify-content: center;">
+                                <span id="vendidosProgressoAcessorios" style="color: white; font-weight: bold; font-size: 12px;">R$ 0</span>
+                            </div>
+                            <div id="faltamProgressoAcessorios" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #495057; font-weight: bold; font-size: 12px;">R$ 0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VENDEDORAS -->
+                <div class="vendedoras-section">
+                    <div class="meta-card-header">
+                        👥 Ranking vendedoras
+                    </div>
+                    
+                    <div class="ranking-category">
+                        <div class="ranking-title">📱 Aparelhos</div>
+                        <div id="vendedorasAparelhos">
+                            <div class="loading">Carregando vendedoras...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="ranking-category">
+                        <div class="ranking-title">🎧 Acessórios</div>
+                        <div id="vendedorasAcessorios">
+                            <div class="loading">Carregando vendedoras...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEÇÃO ADMINISTRATIVO -->
+        <div id="secao-administrativo" class="secao-loja hidden">
+            <div class="secao-header">
+                <div class="secao-title">📊 PAINEL ADMINISTRATIVO ICLUB</div>
+                <div id="admin_lastUpdate" class="timestamp">🕒 Carregando...</div>
+                <div id="admin_periodoVendas" class="period">📅 Carregando período...</div>
+            </div>
+
+            <div class="content">
+                <!-- METAS GERAIS -->
+                <div class="admin-section">
+                    <div class="admin-category-title">📊 Metas Gerais</div>
+                    <div id="admin_metasGerais">
+                        <div class="admin-loading">Carregando dados...</div>
+                    </div>
+                </div>
+
+                <!-- META POR VENDEDOR -->
+                <div class="admin-section">
+                    <div class="admin-category-title">👥 Meta por vendedor</div>
+                    
+                    <!-- APARELHOS -->
+                    <div class="admin-subcategory">
+                        <div class="admin-subcategory-title">📱 Aparelhos</div>
+                        <div id="admin_metasVendedorAparelhos">
+                            <div class="admin-loading">Carregando dados...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- ACESSÓRIOS -->
+                    <div class="admin-subcategory">
+                        <div class="admin-subcategory-title">🎧 Acessórios</div>
+                        <div id="admin_metasVendedorAcessorios">
+                            <div class="admin-loading">Carregando dados...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RANKING DE VENDEDORAS -->
+                <div class="admin-section">
+                    <div class="admin-category-title">🏆 Ranking de vendedoras</div>
+                    
+                    <!-- APARELHOS -->
+                    <div class="admin-subcategory">
+                        <div class="admin-subcategory-title">📱 Aparelhos</div>
+                        <div id="admin_rankingAparelhos">
+                            <div class="admin-loading">Carregando ranking...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- ACESSÓRIOS -->
+                    <div class="admin-subcategory">
+                        <div class="admin-subcategory-title">🎧 Acessórios</div>
+                        <div id="admin_rankingAcessorios">
+                            <div class="admin-loading">Carregando ranking...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TOP 5 PRODUTOS -->
+                <div class="admin-section">
+                    <div class="admin-category-title">🏅 Top 5 produtos</div>
+                    
+                    <!-- APARELHOS -->
+                    <div class="admin-subcategory">
+                        <div class="admin-subcategory-title">📱 Aparelhos</div>
+                        <table class="admin-table-old">
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th>Quantidade</th>
+                                    <th>Faturamento</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin_top5Aparelhos">
+                                <tr><td colspan="3" class="loading">Carregando produtos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- ACESSÓRIOS -->
+                    <div class="admin-subcategory">
+                        <div class="admin-subcategory-title">🎧 Acessórios</div>
+                        <table class="admin-table-old">
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th>Quantidade</th>
+                                    <th>Faturamento</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin_top5Acessorios">
+                                <tr><td colspan="3" class="loading">Carregando produtos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SISTEMA DE LOGIN -->
+        <div id="loginOverlay" class="login-overlay hidden">
+            <div class="login-modal">
+                <div id="loginTitle" class="login-title">🔐 Acesso Restrito</div>
+                <div id="loginSubtitle" class="login-subtitle">Digite a senha para acessar</div>
+                
+                <input type="password" id="loginPassword" class="login-input" placeholder="Digite a senha...">
+                
+                <div class="login-buttons">
+                    <button id="loginBtn" class="login-btn">Entrar</button>
+                    <button id="loginCancel" class="login-cancel">Cancelar</button>
+                </div>
+                
+                <div id="loginError" class="login-error"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="firebaseConfig.js"></script>
+    <script src="painel.js"></script>
+</body>
+</html>
