@@ -1,5 +1,6 @@
 // netlify/functions/auto-update.js
 // Função Netlify que baixa e processa automaticamente os relatórios
+// ALTERAÇÃO: Sempre pega do dia 1 do mês atual até hoje
 
 const https = require('https');
 const XLSX = require('xlsx');
@@ -42,23 +43,25 @@ exports.handler = async (event, context) => {
     try {
         console.log('🚀 Iniciando automação de relatórios...');
         
-        // Calcular datas automaticamente
+        // ALTERAÇÃO: Calcular datas - SEMPRE DO DIA 1 ATÉ HOJE
         const hoje = new Date();
-        const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+        const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1); // Dia 1 do mês atual
         
-        const fim = hoje.toISOString().split('T')[0]; // YYYY-MM-DD
-        const inicio = primeiroDia.toISOString().split('T')[0]; // YYYY-MM-DD
+        const fim = hoje.toISOString().split('T')[0]; // YYYY-MM-DD (hoje)
+        const inicio = primeiroDia.toISOString().split('T')[0]; // YYYY-MM-DD (dia 1 do mês)
         
-        console.log(`📅 Período: ${inicio} a ${fim}`);
+        console.log(`📅 Período CORRIGIDO: ${inicio} (dia 1) a ${fim} (hoje)`);
         
-        // URLs dos relatórios com datas dinâmicas
+        // URLs dos relatórios com datas dinâmicas - SEMPRE DIA 1 ATÉ HOJE
         const urlAparelhos = `https://iclubstore.iphonebiz.com.br/relatorios/vendas?fim=${fim}&inicio=${inicio}&locals=14&locals=15&locals=21&seminovo=&brinde=true&categoria=93&categoria=134`;
         const urlAcessorios = `https://iclubstore.iphonebiz.com.br/relatorios/vendas?fim=${fim}&inicio=${inicio}&locals=14&locals=15&locals=21&seminovo=&brinde=true&categoria=91`;
         
         console.log('📱 Baixando relatório de aparelhos...');
+        console.log(`🔗 URL Aparelhos: ${urlAparelhos}`);
         const dadosAparelhos = await baixarRelatorio(urlAparelhos);
         
         console.log('🎧 Baixando relatório de acessórios...');
+        console.log(`🔗 URL Acessórios: ${urlAcessorios}`);
         const dadosAcessorios = await baixarRelatorio(urlAcessorios);
         
         console.log('📊 Processando dados...');
@@ -76,10 +79,14 @@ exports.handler = async (event, context) => {
             body: JSON.stringify({
                 success: true,
                 message: 'Relatórios processados com sucesso',
-                periodo: { inicio, fim },
+                periodo: { 
+                    inicio: inicio + ' (dia 1 do mês)', 
+                    fim: fim + ' (hoje)' 
+                },
                 totalRegistros: dadosCombinados.length,
                 aparelhos: dadosAparelhos.length,
-                acessorios: dadosAcessorios.length
+                acessorios: dadosAcessorios.length,
+                filtroAplicado: 'Do dia 1 do mês atual até hoje'
             })
         };
         

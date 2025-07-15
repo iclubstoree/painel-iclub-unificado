@@ -8,12 +8,12 @@
 # FIREBASE_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\n..."
 # WEBHOOK_URL = "https://discord.com/api/webhooks/..." (opcional)
 
-# Agendamento automático - Executa às 23h todos os dias
+# Agendamento automático - ALTERADO PARA 15:30 PARA TESTE
 [[plugins]]
   package = "netlify-plugin-cron"
   
   [plugins.inputs]
-    schedule = "0 23 * * *"  # Às 23:00 todos os dias
+    schedule = "30 15 * * *"  # Às 15:30 todos os dias (TESTE)
     url = "/.netlify/functions/cron-scheduler"
     
 # Configuração de headers para CORS
