@@ -2121,106 +2121,6 @@ function atualizarTop5Produtos(vendasOriginais) {
 }
 
 // ============================================
-// UTILITÁRIOS
-// ============================================
-
-// Formatar input monetário durante digitação
-function formatarInputMonetario(input) {
-    let valor = input.value.replace(/\D/g, '');
-    
-    if (valor.length > 0) {
-        // Converter para centavos
-        let numeroFloat = parseFloat(valor) / 100;
-        
-        // Formatar para moeda brasileira
-        let valorFormatado = numeroFloat.toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        });
-        
-        input.value = valorFormatado;
-    }
-}
-
-// Formatar input monetário completo (no blur)
-function formatarInputMonetarioCompleto(input) {
-    let valor = input.value.replace(/\D/g, '');
-    
-    if (valor.length > 0) {
-        // Se não tem casas decimais, adicionar ,00
-        if (valor.length <= 2) {
-            valor = valor.padStart(3, '0');
-        }
-        
-        let numeroFloat = parseFloat(valor) / 100;
-        
-        let valorFormatado = numeroFloat.toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        });
-        
-        input.value = valorFormatado;
-    }
-}
-
-// Formatar moeda para exibição (carregar do Firebase)
-function formatarMoedaDisplay(valor) {
-    return valor.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-    });
-}
-
-// Formatar moeda completa (sem abreviação)
-function formatarMoedaCompleta(valor) {
-    return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-    }).format(valor);
-}
-
-// Manter função original para compatibilidade
-function formatarMoeda(valor) {
-    return formatarMoedaCompleta(valor);
-}
-
-// Formatar número com pontos
-function formatarInput(input) {
-    let valor = input.value.replace(/\D/g, '');
-    
-    if (valor.length > 3) {
-        valor = valor.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    }
-    
-    input.value = valor;
-}
-
-// Formatar número com pontos
-function formatarNumero(valor) {
-    return valor.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-}
-
-// Mostrar erro
-function mostrarErro(mensagem) {
-    const errorMsg = document.getElementById('errorMessage');
-    const errorText = document.getElementById('errorText');
-    const successMsg = document.getElementById('successMessage');
-    
-    if (errorMsg && errorText) {
-        errorText.textContent = mensagem;
-        errorMsg.style.display = 'block';
-        
-        if (successMsg) {
-            successMsg.style.display = 'none';
-        }
-        
-        errorMsg.scrollIntoView({ behavior: 'smooth' });
-    } else {
-        alert(mensagem);
-    }
-}
-
-// ============================================
 // SEÇÃO DE AUTOMAÇÃO - NOVA FUNCIONALIDADE
 // ============================================
 
@@ -2268,15 +2168,23 @@ function adicionarBotaoAutomacao() {
                             </button>
                         </div>
                         
-                        <div class="config-field">
-                            <label class="config-label">Horário da Automação</label>
-                            <input type="time" id="horarioAutomacao" class="config-input" value="23:00" disabled>
+                        <div class="config-grid">
+                            <div class="config-field">
+                                <label class="config-label">Horário da Automação</label>
+                                <input type="time" id="horarioAutomacao" class="config-input" value="15:30" disabled>
+                            </div>
+                            <div class="config-field" style="display: flex; align-items: end;">
+                                <button id="editHorarioAutomacao" class="edit-btn" style="padding: 12px 20px; font-size: 12px;">
+                                    Editar Horário
+                                </button>
+                            </div>
                         </div>
                         
                         <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px;">
                             <h4 style="color: #28a745; margin-bottom: 10px;">📋 Como funciona:</h4>
                             <ul style="font-size: 14px; color: #666; padding-left: 20px;">
-                                <li>Todo dia às 23h os relatórios são baixados automaticamente</li>
+                                <li id="textoHorario">Todo dia às 15:30 os relatórios são baixados automaticamente</li>
+                                <li>Filtra sempre do dia 1 do mês atual até hoje</li>
                                 <li>Os dados são processados e atualizados no Firebase</li>
                                 <li>Todos os painéis são atualizados automaticamente</li>
                                 <li>Notificações são enviadas em caso de erro</li>
@@ -2344,6 +2252,7 @@ async function verificarStatusAutomacao() {
 function configurarBotaoTeste() {
     const btnTeste = document.getElementById('btnTesteAutomacao');
     const btnHistorico = document.getElementById('btnHistoricoAutomacao');
+    const btnEditHorario = document.getElementById('editHorarioAutomacao');
     
     if (btnTeste) {
         btnTeste.addEventListener('click', async () => {
@@ -2382,6 +2291,151 @@ function configurarBotaoTeste() {
         btnHistorico.addEventListener('click', () => {
             mostrarHistoricoAutomacao();
         });
+    }
+    
+    // NOVO: Configurar edição de horário
+    if (btnEditHorario) {
+        btnEditHorario.addEventListener('click', () => {
+            toggleEditarHorario();
+        });
+    }
+}
+
+// NOVA FUNÇÃO: Alternar edição de horário
+function toggleEditarHorario() {
+    const inputHorario = document.getElementById('horarioAutomacao');
+    const btnEdit = document.getElementById('editHorarioAutomacao');
+    const textoHorario = document.getElementById('textoHorario');
+    
+    if (!inputHorario || !btnEdit) return;
+    
+    const isEditando = btnEdit.textContent.includes('Salvar');
+    
+    if (isEditando) {
+        // MODO SALVAR → VISUALIZAR
+        console.log('💾 Salvando horário da automação...');
+        
+        const novoHorario = inputHorario.value;
+        if (!novoHorario) {
+            mostrarErro('Digite um horário válido!');
+            return;
+        }
+        
+        // Salvar horário no Firebase
+        salvarHorarioAutomacao(novoHorario);
+        
+        // Desabilitar campo
+        inputHorario.disabled = true;
+        inputHorario.style.backgroundColor = '#e9ecef';
+        inputHorario.style.color = '#6c757d';
+        
+        // Mudar botão
+        btnEdit.textContent = 'Editar Horário';
+        btnEdit.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+        
+        // Atualizar texto explicativo
+        if (textoHorario) {
+            textoHorario.textContent = `Todo dia às ${novoHorario} os relatórios são baixados automaticamente`;
+        }
+        
+        console.log('✅ Horário alterado para:', novoHorario);
+        
+    } else {
+        // MODO VISUALIZAR → EDITAR
+        console.log('✏️ Entrando em modo edição de horário');
+        
+        // Habilitar campo
+        inputHorario.disabled = false;
+        inputHorario.style.backgroundColor = '#ffffff';
+        inputHorario.style.color = '#495057';
+        inputHorario.style.borderColor = '#ced4da';
+        
+        // Mudar botão
+        btnEdit.textContent = 'Salvar Horário';
+        btnEdit.style.background = 'linear-gradient(135deg, #198754, #20c997)';
+        
+        // Focar no campo
+        inputHorario.focus();
+        
+        console.log('✅ Modo edição de horário ativado');
+    }
+}
+
+// NOVA FUNÇÃO: Salvar horário no Firebase
+async function salvarHorarioAutomacao(horario) {
+    try {
+        if (!window.db) {
+            throw new Error('Firebase não está conectado');
+        }
+        
+        console.log(`💾 Salvando horário: ${horario}`);
+        
+        const configData = {
+            horarioAutomacao: horario,
+            ultimaAtualizacao: new Date().toISOString()
+        };
+        
+        await window.db.collection('configuracoes').doc('automacao').set(configData);
+        
+        console.log('✅ Horário salvo no Firebase!');
+        
+        // Feedback visual
+        const btnEdit = document.getElementById('editHorarioAutomacao');
+        const originalText = btnEdit.textContent;
+        btnEdit.textContent = '✅ Salvo!';
+        btnEdit.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+        
+        setTimeout(() => {
+            btnEdit.textContent = 'Editar Horário';
+        }, 2000);
+        
+        // Mostrar aviso sobre redeploy
+        mostrarSucesso(`✅ Horário alterado para ${horario}!<br><strong>⚠️ Para ativar a mudança, é necessário fazer redeploy no Netlify.</strong>`);
+        
+    } catch (error) {
+        console.error('❌ Erro ao salvar horário:', error);
+        
+        const btnEdit = document.getElementById('editHorarioAutomacao');
+        btnEdit.textContent = '❌ Erro!';
+        btnEdit.style.background = '#dc3545';
+        
+        setTimeout(() => {
+            btnEdit.textContent = 'Salvar Horário';
+        }, 2000);
+        
+        mostrarErro('❌ Erro ao salvar horário da automação');
+    }
+}
+
+// NOVA FUNÇÃO: Carregar horário salvo
+async function carregarHorarioAutomacao() {
+    try {
+        if (!window.db) return;
+        
+        const doc = await window.db.collection('configuracoes').doc('automacao').get();
+        
+        if (doc.exists) {
+            const config = doc.data();
+            const horarioSalvo = config.horarioAutomacao;
+            
+            if (horarioSalvo) {
+                const inputHorario = document.getElementById('horarioAutomacao');
+                const textoHorario = document.getElementById('textoHorario');
+                
+                if (inputHorario) {
+                    inputHorario.value = horarioSalvo;
+                }
+                
+                if (textoHorario) {
+                    textoHorario.textContent = `Todo dia às ${horarioSalvo} os relatórios são baixados automaticamente`;
+                }
+                
+                console.log(`🕒 Horário carregado: ${horarioSalvo}`);
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar horário:', error);
     }
 }
 
@@ -2493,6 +2547,106 @@ function mostrarSucesso(mensagem) {
     }
 }
 
+// ============================================
+// UTILITÁRIOS
+// ============================================
+
+// Formatar input monetário durante digitação
+function formatarInputMonetario(input) {
+    let valor = input.value.replace(/\D/g, '');
+    
+    if (valor.length > 0) {
+        // Converter para centavos
+        let numeroFloat = parseFloat(valor) / 100;
+        
+        // Formatar para moeda brasileira
+        let valorFormatado = numeroFloat.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        });
+        
+        input.value = valorFormatado;
+    }
+}
+
+// Formatar input monetário completo (no blur)
+function formatarInputMonetarioCompleto(input) {
+    let valor = input.value.replace(/\D/g, '');
+    
+    if (valor.length > 0) {
+        // Se não tem casas decimais, adicionar ,00
+        if (valor.length <= 2) {
+            valor = valor.padStart(3, '0');
+        }
+        
+        let numeroFloat = parseFloat(valor) / 100;
+        
+        let valorFormatado = numeroFloat.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        });
+        
+        input.value = valorFormatado;
+    }
+}
+
+// Formatar moeda para exibição (carregar do Firebase)
+function formatarMoedaDisplay(valor) {
+    return valor.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    });
+}
+
+// Formatar moeda completa (sem abreviação)
+function formatarMoedaCompleta(valor) {
+    return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    }).format(valor);
+}
+
+// Manter função original para compatibilidade
+function formatarMoeda(valor) {
+    return formatarMoedaCompleta(valor);
+}
+
+// Formatar número com pontos
+function formatarInput(input) {
+    let valor = input.value.replace(/\D/g, '');
+    
+    if (valor.length > 3) {
+        valor = valor.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+    
+    input.value = valor;
+}
+
+// Formatar número com pontos
+function formatarNumero(valor) {
+    return valor.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+// Mostrar erro
+function mostrarErro(mensagem) {
+    const errorMsg = document.getElementById('errorMessage');
+    const errorText = document.getElementById('errorText');
+    const successMsg = document.getElementById('successMessage');
+    
+    if (errorMsg && errorText) {
+        errorText.textContent = mensagem;
+        errorMsg.style.display = 'block';
+        
+        if (successMsg) {
+            successMsg.style.display = 'none';
+        }
+        
+        errorMsg.scrollIntoView({ behavior: 'smooth' });
+    } else {
+        alert(mensagem);
+    }
+}
+
 // Adicionar configuração de automação ao iniciarSistema
 const iniciarSistemaOriginal = window.iniciarSistema;
 window.iniciarSistema = function() {
@@ -2502,5 +2656,7 @@ window.iniciarSistema = function() {
     // Adicionar automação
     setTimeout(() => {
         configurarAutomacao();
+        // NOVO: Carregar horário salvo
+        carregarHorarioAutomacao();
     }, 2000);
 };
