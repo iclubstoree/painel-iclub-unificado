@@ -1,0 +1,21 @@
+{
+  "name": "painel-iclub-automatizado",
+  "version": "1.0.0",
+  "description": "Sistema automatizado de relatórios ICLUB",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'Build concluído - sistema estático'",
+    "start": "echo 'Aplicação estática - sem servidor local necessário'"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["iclub", "vendas", "automacao", "firebase", "netlify"],
+  "author": "Sistema ICLUB",
+  "license": "MIT"
+}
