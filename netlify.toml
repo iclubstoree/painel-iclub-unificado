@@ -1,4 +1,4 @@
-# netlify.toml
+# netlify.toml - VERSÃO MELHORADA
 [build]
   functions = "netlify/functions"
   publish = "."
@@ -6,20 +6,85 @@
 # Variáveis de ambiente (configurar no painel do Netlify)
 # FIREBASE_CLIENT_EMAIL = "seu-email@projeto.iam.gserviceaccount.com"
 # FIREBASE_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\n..."
-# WEBHOOK_URL = "https://discord.com/api/webhooks/..." (opcional)
+# WEBHOOK_URL = "https://discord.com/api/webhooks/..." (opcional para notificações)
 
-# Agendamento automático - ALTERADO PARA 15:30 PARA TESTE
+# ============================================
+# AGENDAMENTO AUTOMÁTICO - HORÁRIO EDITÁVEL
+# ============================================
+# SEMPRE pega do dia 1 do mês atual até hoje
+# Para alterar o horário:
+# 1. Edite o campo 'schedule' abaixo 
+# 2. Use formato cron: "minuto hora * * *"
+# 3. Horário em UTC (Brasília = UTC-3)
+# 4. Exemplos: 
+#    - 15:30 BRT = 18:30 UTC = "30 18 * * *"
+#    - 16:00 BRT = 19:00 UTC = "0 19 * * *"
+#    - 14:30 BRT = 17:30 UTC = "30 17 * * *"
+
 [[plugins]]
   package = "netlify-plugin-cron"
   
   [plugins.inputs]
-    schedule = "30 15 * * *"  # Às 15:30 todos os dias (TESTE)
+    # HORÁRIO ATUAL: 15:30 Brasília = 18:30 UTC
+    schedule = "30 18 * * *"  # Todo dia às 15:30 (horário de Brasília)
     url = "/.netlify/functions/cron-scheduler"
-    
-# Configuração de headers para CORS
+
+# ============================================
+# CONFIGURAÇÃO DE HEADERS PARA CORS
+# ============================================
 [[headers]]
   for = "/.netlify/functions/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Methods = "GET, POST, OPTIONS"
     Access-Control-Allow-Headers = "Content-Type"
+
+# ============================================
+# REDIRECIONAMENTOS ÚTEIS
+# ============================================
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/backup"
+  to = "/.netlify/functions/backup-manager"
+  status = 200
+
+# ============================================
+# CONFIGURAÇÕES DE BUILD E DEPLOY
+# ============================================
+[build.environment]
+  NODE_VERSION = "18"
+  NPM_VERSION = "9"
+
+# ============================================
+# INSTRUÇÕES PARA ALTERAR HORÁRIO
+# ============================================
+# 
+# COMO ALTERAR O HORÁRIO DA AUTOMAÇÃO:
+# 
+# 1. PELO PAINEL (RECOMENDADO):
+#    - Acesse Configuração > Automação
+#    - Clique em "⏰ EDITAR HORÁRIO"
+#    - Escolha o novo horário
+#    - Salve (será gravado no Firebase)
+#    - Faça redeploy manual no Netlify
+# 
+# 2. EDITANDO ESTE ARQUIVO:
+#    - Altere o campo "schedule" acima
+#    - Lembre-se: horário em UTC (Brasília -3h)
+#    - Commit e push para fazer deploy
+# 
+# CONVERSÕES ÚTEIS (Brasília → UTC):
+# 14:00 BRT = 17:00 UTC = "0 17 * * *"
+# 14:30 BRT = 17:30 UTC = "30 17 * * *"
+# 15:00 BRT = 18:00 UTC = "0 18 * * *"
+# 15:30 BRT = 18:30 UTC = "30 18 * * *"  ← ATUAL
+# 16:00 BRT = 19:00 UTC = "0 19 * * *"
+# 16:30 BRT = 19:30 UTC = "30 19 * * *"
+# 17:00 BRT = 20:00 UTC = "0 20 * * *"
+# 18:00 BRT = 21:00 UTC = "0 21 * * *"
+# 
+# ============================================
