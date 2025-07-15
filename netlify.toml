@@ -1,7 +1,21 @@
+# netlify.toml
 [build]
   functions = "netlify/functions"
   publish = "."
 
+# Variáveis de ambiente (configurar no painel do Netlify)
+# FIREBASE_CLIENT_EMAIL = "seu-email@projeto.iam.gserviceaccount.com"
+# FIREBASE_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\n..."
+# WEBHOOK_URL = "https://discord.com/api/webhooks/..." (opcional)
+
+# Agendamento automático - ALTERADO PARA 15:30 PARA TESTE
+[[plugins]]
+  package = "netlify-plugin-cron"
+  
+  [plugins.inputs]
+    schedule = "30 15 * * *"  # Às 15:30 todos os dias (TESTE)
+    url = "/.netlify/functions/cron-scheduler"
+    
 # Configuração de headers para CORS
 [[headers]]
   for = "/.netlify/functions/*"
