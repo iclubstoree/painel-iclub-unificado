@@ -1,20 +1,8 @@
-# netlify.toml - VERSÃO CORRIGIDA
+# netlify.toml - VERSÃO CORRIGIDA PARA DEPLOY
 [build]
   functions = "netlify/functions"
   publish = "."
-
-# ============================================
-# AGENDAMENTO AUTOMÁTICO - HORÁRIO EDITÁVEL
-# ============================================
-# SEMPRE pega do dia 1 do mês atual até hoje
-# Horário atual: 15:30 Brasília = 18:30 UTC
-
-[[plugins]]
-  package = "netlify-plugin-cron"
-  
-  [plugins.inputs]
-    schedule = "30 18 * * *"  # Todo dia às 15:30 (horário de Brasília)
-    url = "/.netlify/functions/cron-scheduler"
+  command = "echo 'Build estático concluído'"
 
 # ============================================
 # CONFIGURAÇÃO DE HEADERS PARA CORS
@@ -25,6 +13,13 @@
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Methods = "GET, POST, OPTIONS"
     Access-Control-Allow-Headers = "Content-Type"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
 
 # ============================================
 # REDIRECIONAMENTOS ÚTEIS
@@ -39,15 +34,17 @@
 # ============================================
 [build.environment]
   NODE_VERSION = "18"
+  NPM_FLAGS = "--production=false"
 
 # ============================================
-# CONVERSÕES ÚTEIS (Brasília → UTC):
+# CONFIGURAÇÃO DE FUNÇÕES
 # ============================================
-# 14:00 BRT = 17:00 UTC = "0 17 * * *"
-# 14:30 BRT = 17:30 UTC = "30 17 * * *"
-# 15:00 BRT = 18:00 UTC = "0 18 * * *"
-# 15:30 BRT = 18:30 UTC = "30 18 * * *"  ← ATUAL
-# 16:00 BRT = 19:00 UTC = "0 19 * * *"
-# 16:30 BRT = 19:30 UTC = "30 19 * * *"
-# 17:00 BRT = 20:00 UTC = "0 20 * * *"
-# 18:00 BRT = 21:00 UTC = "0 21 * * *"
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# ============================================
+# NOTA: Plugin de CRON removido
+# Use agendadores externos como GitHub Actions
+# ou crie webhooks manuais para automação
+# ============================================
